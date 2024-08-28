@@ -4,6 +4,11 @@ namespace CassandraDriver;
 
 public static class CassandraMurmur3Hash
 {
+    public static long CalculatePrimaryKey(ReadOnlySpan<byte> key)
+    {
+        return CalculateHash(key, 0).Item1;
+    }
+    
     public static unsafe (long, long) CalculateHash(ReadOnlySpan<byte> key, ulong seed)
     {
         Span<long> result = stackalloc long[2];

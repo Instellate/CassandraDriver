@@ -49,20 +49,20 @@ public class Murmur3Tests
     {
         Query query =
             await this._client.QueryAsync(
-                "SELECT token(name) AS tokenn, name FROM person"
+                "SELECT token(name) AS name_token, name FROM person"
             );
 
         foreach (Row row in query.Rows)
         {
-            Assert.IsInstanceOf<long>(row["tokenn"]);
+            Assert.IsInstanceOf<long>(row["name_token"]);
             Assert.IsInstanceOf<string>(row["name"]);
 
-            long token = (long)row["tokenn"];
+            long token = (long)row["name_token"];
             string name = (string)row["name"];
             
-            (long, long) hash =
-                CassandraMurmur3Hash.CalculateHash(Encoding.UTF8.GetBytes(name), 0);
-            Assert.That(token, Is.EqualTo(hash.Item1));
+            long hash =
+                CassandraMurmur3Hash.CalculatePrimaryKey(Encoding.UTF8.GetBytes(name));
+            Assert.That(token, Is.EqualTo(hash));
         }
     }
 }
