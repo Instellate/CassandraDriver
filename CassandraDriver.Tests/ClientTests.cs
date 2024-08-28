@@ -9,26 +9,8 @@ public class ClientTests
     [OneTimeSetUp]
     public async Task SetupAsync()
     {
-        this._client = new CassandraClient("172.17.0.2", defaultKeyspace: "csharpdriver");
+        this._client = new CassandraClient("localhost", defaultKeyspace: "csharpdriver");
         await this._client.ConnectAsync();
-        Trace.Listeners.Add(new ConsoleTraceListener());
-        TaskScheduler.UnobservedTaskException += HandleUnhandledTaskExceptions;
-    }
-
-    public static void HandleUnhandledTaskExceptions(
-        object? sender,
-        UnobservedTaskExceptionEventArgs e
-    )
-    {
-        Console.WriteLine(e);
-    }
-
-    [OneTimeTearDown]
-    public async Task EndTestAsync()
-    {
-        await this._client.DisconnectAsync();
-        this._client.Dispose();
-        Trace.Flush();
     }
 
     [Test]
