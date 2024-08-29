@@ -26,7 +26,6 @@ public abstract class Query
         QueryKind kind = (QueryKind)BinaryPrimitives.ReadInt32BigEndian(bytes);
         bytes = bytes[sizeof(QueryKind)..];
 
-
         Query query = null!;
         switch (kind)
         {
@@ -40,9 +39,11 @@ public abstract class Query
                 query = CqlSetKeyspace.Deserialize(ref bytes);
                 break;
             case QueryKind.Prepared:
-                break;
+                goto default;
             case QueryKind.SchemeChange:
-                break;
+                goto default;
+            default:
+                throw new ArgumentOutOfRangeException();
         }
 
         if (warnings?.Strings.Count > 0)
@@ -55,7 +56,5 @@ public abstract class Query
         }
 
         return query;
-
-        throw new NotImplementedException();
     }
 }

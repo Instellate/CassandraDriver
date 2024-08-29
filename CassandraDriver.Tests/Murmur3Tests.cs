@@ -12,9 +12,14 @@ public class Murmur3Tests
     [SetUp]
     public async Task SetUpAsync()
     {
-        this._strings = await File.ReadAllLinesAsync("./vectors.txt");
         this._client = new CassandraClient("localhost", defaultKeyspace: "csharpdriver");
         await this._client.ConnectAsync();
+    }
+
+    [SetUp]
+    public void SetUp()
+    {
+        this._strings = File.ReadAllLines("./vectors.txt");
     }
 
     [Test]
@@ -59,7 +64,7 @@ public class Murmur3Tests
 
             long token = (long)row["name_token"];
             string name = (string)row["name"];
-            
+
             long hash =
                 CassandraMurmur3Hash.CalculatePrimaryKey(Encoding.UTF8.GetBytes(name));
             Assert.That(token, Is.EqualTo(hash));

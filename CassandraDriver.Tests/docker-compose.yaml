@@ -3,3 +3,6 @@
     image: scylladb/scylla
     ports:
       - "9042:9042"
+    command: --api-address 0.0.0.0
+    volumes:
+      - "./scylla-vol/data:/var/lib/scylla/data"

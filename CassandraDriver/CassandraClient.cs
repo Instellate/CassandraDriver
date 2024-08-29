@@ -29,7 +29,8 @@ public class CassandraClient : IDisposable
 
     public CassandraClient(string host, int port = 9042, string? defaultKeyspace = null)
     {
-        _socket = new Socket(AddressFamily.InterNetwork,
+        _socket = new Socket(
+            AddressFamily.InterNetwork,
             SocketType.Stream,
             ProtocolType.Tcp);
         this._host = host;
