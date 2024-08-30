@@ -8,19 +8,19 @@ internal class CqlColumn
 {
     public CqlColumn(
         CqlString name,
-        CqlColumnValueType type,
+        CqlColumnValue value,
         CqlString? keyspace = null,
         CqlString? table = null
     )
     {
         this.Name = name;
-        this.Type = type;
         this.Keyspace = keyspace;
         this.Table = table;
+        this.Value = value;
     }
 
     public CqlString Name { get; init; }
-    public CqlColumnValueType Type { get; init; }
+    public CqlColumnValue Value { get; init; }
     public CqlString? Keyspace { get; init; }
     public CqlString? Table { get; init; }
 
@@ -38,12 +38,11 @@ internal class CqlColumn
         }
 
         CqlString name = CqlString.Deserialize(ref bytes);
-        CqlColumnValueType type =
-            (CqlColumnValueType)BinaryPrimitives.ReadInt16BigEndian(bytes);
-        bytes = bytes[sizeof(short)..];
+        CqlColumnValue value = CqlColumnValue.Deserialize(ref bytes);
+
         return new CqlColumn(
             name,
-            type,
+            value,
             keyspace,
             table
         );

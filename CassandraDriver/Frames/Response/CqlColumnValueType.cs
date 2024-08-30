@@ -1,6 +1,6 @@
 namespace CassandraDriver.Frames.Response;
 
-public enum CqlColumnValueType
+public enum CqlColumnValueType : short
 {
     Custom = 0x00,
     Ascii = 0x01,

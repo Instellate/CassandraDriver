@@ -33,18 +33,21 @@ public class ClientTests
         StringAssert.Contains("Instellate", (string)query[0]["name"]);
         Assert.That((int)query[0]["user_id"], Is.EqualTo(0));
 
-        Query errorQuery =
+        Query warningQuery =
             await this._client.QueryAsync("SELECT * FROM person WHERE user_id = ?", 1);
-        Assert.IsInstanceOf<string>(errorQuery[0]["name"]);
-        Assert.IsInstanceOf<int>(errorQuery[0]["user_id"]);
+        Assert.IsInstanceOf<string>(warningQuery[0]["name"]);
+        Assert.IsInstanceOf<int>(warningQuery[0]["user_id"]);
 
-        StringAssert.Contains("Flaze", (string)errorQuery[0]["name"]);
-        Assert.That((int)errorQuery[0]["user_id"], Is.EqualTo(1));
+        StringAssert.Contains("Flaze", (string)warningQuery[0]["name"]);
+        Assert.That((int)warningQuery[0]["user_id"], Is.EqualTo(1));
 
-        Assert.IsNotNull(errorQuery.Warnings);
+        Assert.IsNotNull(warningQuery.Warnings);
         StringAssert.AreEqualIgnoringCase(
             "This query should use ALLOW FILTERING and will be rejected in future versions.",
-            errorQuery.Warnings[0]
+            warningQuery.Warnings[0]
         );
+
+        Query setQuery = await this._client.QueryAsync("SELECT tokens FROM system.local");
+        Assert.IsInstanceOf<HashSet<string>>(setQuery[0]["tokens"]);
     }
 }
