@@ -1,4 +1,4 @@
-namespace CassandraDriver;
+namespace CassandraDriver.Results;
 
 public class QueryResults
 {

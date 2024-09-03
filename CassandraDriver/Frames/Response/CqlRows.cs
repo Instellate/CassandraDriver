@@ -1,6 +1,7 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using CassandraDriver.Results;
 
 namespace CassandraDriver.Frames.Response;
 
@@ -11,6 +12,7 @@ internal class CqlRows : Query
     internal CqlBytes? PagingState { get; init; }
 
     public override Row this[int index] => Rows[index];
+    public override int Count => Rows.Count;
 
     public static Query Deserialize(ref ReadOnlySpan<byte> bytes)
     {
@@ -38,10 +40,10 @@ internal class CqlRows : Query
             throw new CassandraException("What? How? You are not suppose to do this!!");
         }
 
-        List<CqlColumn> columns = new(columnCount);
+        List<Column> columns = new(columnCount);
         for (int i = 0; i < columnCount; i++)
         {
-            columns.Add(CqlColumn.Deserialize(
+            columns.Add(Column.Deserialize(
                     ref bytes,
                     (flags & CqlQueryResponseFlags.GlobalTableSpec) == 0
                 )

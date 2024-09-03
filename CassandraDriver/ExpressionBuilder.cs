@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
-using CassandraDriver.Frames.Response;
+using CassandraDriver.Results;
 
 namespace CassandraDriver;
 
@@ -25,7 +25,7 @@ internal static class ExpressionBuilder
             )!;
 
         ParameterExpression colParam =
-            Expression.Parameter(typeof(CqlColumnValue), "column");
+            Expression.Parameter(typeof(ColumnValue), "column");
         ParameterExpression lengthParam = Expression.Parameter(typeof(int), "length");
         ParameterExpression spanParam =
             Expression.Parameter(typeof(ReadOnlySpan<byte>).MakeByRefType(), "bytes");

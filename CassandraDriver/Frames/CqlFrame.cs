@@ -28,7 +28,7 @@ internal class CqlFrame : ICqlSerializable
     public short Stream { get; set; }
     public CqlOpCode OpCode { get; set; }
 
-    public int Length { get; set; } = 0;
+    public int Length { get; set; }
 
     public void Serialize(ArrayPoolBufferWriter<byte> writer)
     {

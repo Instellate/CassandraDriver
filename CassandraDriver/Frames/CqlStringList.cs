@@ -6,7 +6,7 @@ using CommunityToolkit.HighPerformance.Buffers;
 
 namespace CassandraDriver.Frames;
 
-public class CqlStringList : ICqlSerializable
+internal class CqlStringList : ICqlSerializable
 {
     public List<CqlString> Strings { get; set; }
 

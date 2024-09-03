@@ -4,29 +4,38 @@ using System.Collections.Generic;
 using CassandraDriver.Frames;
 using CassandraDriver.Frames.Response;
 
-namespace CassandraDriver;
+namespace CassandraDriver.Results;
 
 /// <summary>
-/// The basic class for querying.
+/// The basic class for results, includes queries, prepare, and execute.
 /// Do not inherit and implement it yourself.
 /// </summary>
 public abstract class Query
 {
     private List<String>? _warnings;
+
     public QueryKind Kind { get; internal init; }
     public IReadOnlyList<Row> Rows { get; internal init; } = null!;
     public string SetKeyspace { get; internal init; } = null!;
-    public PreparedStatement PreparedStatement { get; internal init; } = null!;
     public IReadOnlyList<string>? Warnings => this._warnings;
 
+    /// <summary>
+    /// Index rows
+    /// </summary>
+    /// <param name="index">The position of where to index.</param>
     public abstract Row this[int index] { get; }
+
+    /// <summary>
+    /// Gets the row count
+    /// </summary>
+    public abstract int Count { get; }
 
     internal static Query Deserialize(ReadOnlySpan<byte> bytes, CqlStringList? warnings)
     {
         QueryKind kind = (QueryKind)BinaryPrimitives.ReadInt32BigEndian(bytes);
         bytes = bytes[sizeof(QueryKind)..];
 
-        Query query = null!;
+        Query query;
         switch (kind)
         {
             case QueryKind.Void:

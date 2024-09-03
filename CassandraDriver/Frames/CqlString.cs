@@ -5,7 +5,7 @@ using CommunityToolkit.HighPerformance.Buffers;
 
 namespace CassandraDriver.Frames;
 
-public sealed class CqlString : ICqlSerializable
+internal sealed class CqlString : ICqlSerializable
 {
     private string _value;
 

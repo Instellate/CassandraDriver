@@ -5,19 +5,19 @@ using CommunityToolkit.HighPerformance.Buffers;
 
 namespace CassandraDriver.Frames;
 
-public class CqlValue : ICqlSerializable
+public struct CqlValue : ICqlSerializable
 {
-    private readonly byte[] _bytes;
+    internal readonly byte[] Bytes;
 
     public CqlValue(byte[] bytes)
     {
-        this._bytes = bytes;
+        this.Bytes = bytes;
     }
 
     public void Serialize(ArrayPoolBufferWriter<byte> writer)
     {
-        writer.WriteInt(this._bytes.Length);
-        writer.Write(this._bytes);
+        writer.WriteInt(this.Bytes.Length);
+        writer.Write(this.Bytes);
     }
 
     public static CqlValue CreateCqlValue(object value)
@@ -46,5 +46,5 @@ public class CqlValue : ICqlSerializable
         }
     }
 
-    public int SizeOf() => sizeof(int) + this._bytes.Length;
+    public int SizeOf() => sizeof(int) + this.Bytes.Length;
 }

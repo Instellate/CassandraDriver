@@ -1,20 +1,22 @@
 using System.Collections.Generic;
 using System.Linq;
+using CassandraDriver.Frames;
+using CassandraDriver.Frames.Request;
 using CommunityToolkit.HighPerformance;
 using CommunityToolkit.HighPerformance.Buffers;
 
-namespace CassandraDriver.Frames.Request;
+namespace CassandraDriver;
 
-internal class CqlQuery : ICqlSerializable
+internal class CqlExecute
 {
-    public CqlLongString Query { get; set; }
+    public CqlShortBytes Id { get; set; }
     public CqlConsistency Consistency { get; set; } = CqlConsistency.Any;
     public CqlQueryFlags Flags { get; set; } = CqlQueryFlags.None;
     public CqlParameters? Parameters { get; set; }
 
-    public CqlQuery(CqlLongString query, object[] objects, CqlConsistency consistency)
+    public CqlExecute(byte[] id, object[] objects, CqlConsistency consistency)
     {
-        this.Query = query;
+        this.Id = new CqlShortBytes(id.ToList());
         Consistency = consistency;
         if (objects.Length <= 0)
         {
@@ -25,22 +27,21 @@ internal class CqlQuery : ICqlSerializable
         this.Flags = CqlQueryFlags.Values;
     }
 
-    public CqlQuery(CqlLongString query, Dictionary<string, object> dict)
+    public CqlExecute(byte[] id, CqlLongString query, Dictionary<string, object> dict)
     {
-        this.Query = query;
+        this.Id = new CqlShortBytes(id.ToList());
         if (dict.Values.Count == 0)
         {
             return;
         }
 
         this.Parameters = new CqlParameters(dict);
-
         this.Flags = CqlQueryFlags.Values | CqlQueryFlags.WithNamesForValues;
     }
 
     public void Serialize(ArrayPoolBufferWriter<byte> writer)
     {
-        this.Query.Serialize(writer);
+        this.Id.Serialize(writer);
         writer.WriteShort((short)this.Consistency);
         writer.Write((byte)this.Flags);
         if (this.Parameters is null || this.Parameters.Parameters.Count <= 0)
@@ -53,17 +54,15 @@ internal class CqlQuery : ICqlSerializable
 
     public int SizeOf()
     {
-        int size = this.Query.SizeOf();
+        int size = Id.SizeOf();
         size += sizeof(CqlConsistency) + sizeof(CqlQueryFlags);
-        if (!(this.Parameters?.Parameters.Count > 0))
+        if (this.Parameters?.Parameters.Count <= 0)
         {
             return size;
         }
 
         size += sizeof(short);
-        size += this.Parameters?.Parameters
-            .Select((kp) => kp.Key?.SizeOf() ?? 0 + kp.Value.SizeOf())
-            .Sum() ?? 0;
+        size += this.Parameters!.SizeOf();
 
         return size;
     }

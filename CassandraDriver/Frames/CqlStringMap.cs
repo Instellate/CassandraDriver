@@ -6,7 +6,7 @@ using CommunityToolkit.HighPerformance.Buffers;
 
 namespace CassandraDriver.Frames;
 
-public sealed class CqlStringMap : Dictionary<CqlString, CqlString>, ICqlSerializable
+internal sealed class CqlStringMap : Dictionary<CqlString, CqlString>, ICqlSerializable
 {
     public void Serialize(ArrayPoolBufferWriter<byte> writer)
     {

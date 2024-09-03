@@ -1,6 +1,7 @@
 ﻿using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Text;
+using CassandraDriver.Results;
 
 namespace CassandraDriver.Tests;
 
@@ -9,17 +10,19 @@ public class Murmur3Tests
     private string[] _strings;
     private CassandraClient _client;
 
-    [SetUp]
+    [OneTimeSetUp]
     public async Task SetUpAsync()
     {
+        this._strings = await File.ReadAllLinesAsync("./vectors.txt");
         this._client = new CassandraClient("localhost", defaultKeyspace: "csharpdriver");
         await this._client.ConnectAsync();
     }
 
-    [SetUp]
-    public void SetUp()
+    [OneTimeTearDown]
+    public async Task TearDownAsync()
     {
-        this._strings = File.ReadAllLines("./vectors.txt");
+        await this._client.DisconnectAsync();
+        this._client.Dispose();
     }
 
     [Test]
@@ -62,8 +65,8 @@ public class Murmur3Tests
             Assert.IsInstanceOf<long>(row["name_token"]);
             Assert.IsInstanceOf<string>(row["name"]);
 
-            long token = (long)row["name_token"];
-            string name = (string)row["name"];
+            long token = (long)row["name_token"]!;
+            string name = (string)row["name"]!;
 
             long hash =
                 CassandraMurmur3Hash.CalculatePrimaryKey(Encoding.UTF8.GetBytes(name));
