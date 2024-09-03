@@ -1,3 +1,4 @@
+using System;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.Text;
@@ -39,6 +40,30 @@ public struct CqlValue : ICqlSerializable
                 bytes = new byte[sizeof(short)];
                 BinaryPrimitives.WriteInt16BigEndian(bytes, sh);
                 return new CqlValue(bytes);
+            case DateTimeOffset dto:
+                bytes = new byte[8];
+                BinaryPrimitives.WriteInt64BigEndian(bytes, dto.ToUnixTimeMilliseconds());
+                return new CqlValue(bytes);
+            case byte[] bt:
+                return new CqlValue(bt);
+            case Guid id:
+                return new CqlValue(id.ToByteArray(true));
+            case TimeSpan ts:
+                bytes = new byte[8];
+                BinaryPrimitives.WriteInt64BigEndian(bytes, (long)ts.TotalNanoseconds);
+                return new CqlValue(bytes);
+            case sbyte sb:
+                return new CqlValue([(byte)sb]);
+            case float f:
+                bytes = new byte[sizeof(float)];
+                BinaryPrimitives.WriteSingleBigEndian(bytes, f);
+                return new CqlValue(bytes);
+            case double d:
+                bytes = new byte[sizeof(double)];
+                BinaryPrimitives.WriteDoubleBigEndian(bytes, d);
+                return new CqlValue(bytes);
+            case bool b:
+                return new CqlValue([(byte)(b ? 1 : 0)]);
             default:
                 throw new CassandraException(
                     $"Couldn't convert type {value.GetType().Name} to CqlValue"
