@@ -15,7 +15,7 @@ internal class CqlQuery : ICqlSerializable
     public CqlQuery(CqlLongString query, object[] objects, CqlConsistency consistency)
     {
         this.Query = query;
-        Consistency = consistency;
+        this.Consistency = consistency;
         if (objects.Length <= 0)
         {
             return;

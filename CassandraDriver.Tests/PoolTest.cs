@@ -16,16 +16,23 @@ public class PoolTest
             .DiscoverOtherNodes()
             .BlockKeyspace("system")
             .SetDefaultKeyspace("csharpdriver");
-        _pool = await builder.BuildAsync();
+        this._pool = await builder.BuildAsync();
+    }
+
+    [OneTimeTearDown]
+    public async Task TearDownAsync()
+    {
+        await this._pool.DisconnectAsync();
     }
 
     [Test]
     public async Task BuildPoolAsync()
     {
-        Assert.That(_pool.NodeCount, Is.EqualTo(3));
+        Assert.That(this._pool.NodeCount, Is.EqualTo(3));
 
         Query query =
-            await _pool.QueryAsync("SELECT * FROM person WHERE name = ?", "Instellate");
+            await this._pool.QueryAsync("SELECT * FROM person WHERE name = ?",
+                "Instellate");
         Assert.That(query.Count, Is.EqualTo(1));
 
         Assert.IsInstanceOf<string>(query[0]["name"]);

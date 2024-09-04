@@ -1,4 +1,4 @@
-﻿using System.Buffers.Binary;
+using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Text;
 using CassandraDriver.Results;
@@ -14,7 +14,7 @@ public class Murmur3Tests
     public async Task SetUpAsync()
     {
         this._strings = await File.ReadAllLinesAsync("./vectors.txt");
-        this._client = new CassandraClient("localhost", defaultKeyspace: "csharpdriver");
+        this._client = new CassandraClient("172.42.0.2", defaultKeyspace: "csharpdriver");
         await this._client.ConnectAsync();
     }
 

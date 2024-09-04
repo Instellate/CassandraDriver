@@ -17,7 +17,7 @@ internal class CqlExecute
     public CqlExecute(byte[] id, object[] objects, CqlConsistency consistency)
     {
         this.Id = new CqlShortBytes(id.ToList());
-        Consistency = consistency;
+        this.Consistency = consistency;
         if (objects.Length <= 0)
         {
             return;
@@ -54,7 +54,7 @@ internal class CqlExecute
 
     public int SizeOf()
     {
-        int size = Id.SizeOf();
+        int size = this.Id.SizeOf();
         size += sizeof(CqlConsistency) + sizeof(CqlQueryFlags);
         if (this.Parameters?.Parameters.Count <= 0)
         {
