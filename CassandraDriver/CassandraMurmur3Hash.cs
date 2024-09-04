@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace CassandraDriver;
 
@@ -8,7 +8,7 @@ public static class CassandraMurmur3Hash
     {
         return CalculateHash(key, 0).Item1;
     }
-    
+
     public static unsafe (long, long) CalculateHash(ReadOnlySpan<byte> key, ulong seed)
     {
         Span<long> result = stackalloc long[2];
@@ -41,7 +41,8 @@ public static class CassandraMurmur3Hash
         return k;
     }
 
-    private static unsafe void MurmurHash3_x64_128_cassandra(void* key, int len, long seed,
+    private static unsafe void MurmurHash3_x64_128_cassandra(void* key, int len,
+        long seed,
         void* @out)
     {
         byte* data = (byte*)key;

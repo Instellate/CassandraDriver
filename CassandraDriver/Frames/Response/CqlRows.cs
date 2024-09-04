@@ -11,8 +11,8 @@ internal class CqlRows : Query
     internal CqlGlobalTableSpec? GlobalTableSpec { get; init; }
     internal CqlBytes? PagingState { get; init; }
 
-    public override Row this[int index] => Rows[index];
-    public override int Count => Rows.Count;
+    public override Row this[int index] => this.Rows[index];
+    public override int Count => this.Rows.Count;
 
     public static Query Deserialize(ref ReadOnlySpan<byte> bytes)
     {

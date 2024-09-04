@@ -12,28 +12,28 @@ internal class CqlStringList : ICqlSerializable
 
     public CqlStringList(List<string> strings)
     {
-        Strings = new List<CqlString>(strings.Count);
+        this.Strings = new List<CqlString>(strings.Count);
         foreach (string str in strings)
         {
-            Strings.Add(str);
+            this.Strings.Add(str);
         }
     }
 
     public CqlStringList(List<CqlString> strings)
     {
-        Strings = strings;
+        this.Strings = strings;
     }
 
     public void Serialize(ArrayPoolBufferWriter<byte> writer)
     {
-        writer.WriteShort((short)Strings.Count);
+        writer.WriteShort((short)this.Strings.Count);
         foreach (CqlString s in this.Strings)
         {
             s.Serialize(writer);
         }
     }
 
-    public int SizeOf() => sizeof(short) + Strings.Select(s => s.SizeOf()).Sum();
+    public int SizeOf() => sizeof(short) + this.Strings.Select(s => s.SizeOf()).Sum();
 
     public static CqlStringList Deserialize(ref ReadOnlySpan<byte> bytes)
     {

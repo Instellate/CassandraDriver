@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using CassandraDriver.Frames;
 using CassandraDriver.Results;
@@ -9,7 +8,7 @@ using IntervalTree;
 
 namespace CassandraDriver;
 
-public class CassandraPool
+public class CassandraPool : IDisposable
 {
     private readonly
         ConcurrentDictionary<KeyspaceTableHash, IntervalTree<long, CassandraClient>>
@@ -75,7 +74,6 @@ public class CassandraPool
             }
         }
 
-        // It wouldn't matter if an exception is thrown if all nodes are dead
         CassandraClient? node = null;
         if (findIndex > -1)
         {
@@ -137,5 +135,24 @@ public class CassandraPool
         }
 
         return node;
+    }
+
+    public async Task DisconnectAsync()
+    {
+        List<Task> disconnectTasks = new(this._nodes.Count);
+        foreach (CassandraClient cassandraClient in this._nodes)
+        {
+            disconnectTasks.Add(cassandraClient.DisconnectAsync());
+        }
+
+        await Task.WhenAll(disconnectTasks);
+    }
+
+    public void Dispose()
+    {
+        foreach (CassandraClient cassandraClient in this._nodes)
+        {
+            cassandraClient.Dispose();
+        }
     }
 }

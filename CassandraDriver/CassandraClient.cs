@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
@@ -42,7 +42,7 @@ public class CassandraClient : IDisposable
         this._socket.Blocking = false;
         this._socket.DualMode = true;
         this._socket.NoDelay = true;
-        DefaultKeyspace = defaultKeyspace;
+        this.DefaultKeyspace = defaultKeyspace;
     }
 
     public async Task ConnectAsync()
@@ -78,11 +78,11 @@ public class CassandraClient : IDisposable
             throw new CassandraException("Got opcode that isn't error or ready.");
         }
 
-        Connected = true;
+        this.Connected = true;
         _ = HandleReadingAsync(this._tokenSource.Token);
-        if (DefaultKeyspace is not null)
+        if (this.DefaultKeyspace is not null)
         {
-            await QueryAsync("USE " + DefaultKeyspace);
+            await QueryAsync("USE " + this.DefaultKeyspace);
         }
     }
 
@@ -171,9 +171,8 @@ public class CassandraClient : IDisposable
 
         TaskCompletionSource<StreamData> completionSource = new();
         this._streams.TryAdd(stream, completionSource);
-        Task<StreamData> task = completionSource.Task;
         await this._socket.SendAsync(writer.WrittenMemory);
-        StreamData data = await task;
+        StreamData data = await completionSource.Task;
 
         if (data.Frame.OpCode != CqlOpCode.Result)
         {
@@ -187,7 +186,7 @@ public class CassandraClient : IDisposable
     {
         await this._tokenSource.CancelAsync();
         await this._socket.DisconnectAsync(true);
-        Connected = false;
+        this.Connected = false;
         this._tokenSource.TryReset();
     }
 
@@ -268,27 +267,40 @@ public class CassandraClient : IDisposable
         {
             foreach ((short _, TaskCompletionSource<StreamData> source) in this._streams)
             {
-                // ReSharper disable once MethodSupportsCancellation
-                source.SetCanceled();
+                source.SetCanceled(CancellationToken.None);
+                return;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            foreach ((short _, TaskCompletionSource<StreamData> source) in this._streams)
+            {
+                source.SetCanceled(CancellationToken.None);
                 return;
             }
         }
         catch (SocketException e)
         {
-            if (e.Message != "Operation canceled")
-            {
-                Console.WriteLine(e);
-                throw;
-            }
-
             foreach ((short _, TaskCompletionSource<StreamData> source) in this._streams)
             {
                 source.SetCanceled(token);
                 return;
             }
+
+            if (e.Message != "Operation canceled")
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
         catch (Exception e)
         {
+            foreach ((short _, TaskCompletionSource<StreamData> source) in this._streams)
+            {
+                source.SetCanceled(token);
+                return;
+            }
+
             Console.WriteLine($"Reading process failed: {e}");
             await this.DisconnectAsync();
             throw;
@@ -320,8 +332,9 @@ public class CassandraClient : IDisposable
 
     public void Dispose()
     {
-        Connected = false;
+        this.Connected = false;
         this._socket.Dispose();
         this._tokenSource.Cancel();
+        GC.SuppressFinalize(this);
     }
 }

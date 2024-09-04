@@ -47,7 +47,7 @@ internal class CqlParameters : ICqlSerializable
 
     public void Serialize(ArrayPoolBufferWriter<byte> writer)
     {
-        writer.WriteShort((short)Parameters.Count);
+        writer.WriteShort((short)this.Parameters.Count);
         foreach ((CqlString? key, CqlValue value) in this.Parameters)
         {
             if (this._isNamedValues && key is not null)

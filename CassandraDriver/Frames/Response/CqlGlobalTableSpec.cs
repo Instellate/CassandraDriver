@@ -10,8 +10,8 @@ internal class CqlGlobalTableSpec : ICqlSerializable
 
     public void Serialize(ArrayPoolBufferWriter<byte> writer)
     {
-        Keyspace.Serialize(writer);
-        Table.Serialize(writer);
+        this.Keyspace.Serialize(writer);
+        this.Table.Serialize(writer);
     }
 
     public static CqlGlobalTableSpec Deserialize(ref ReadOnlySpan<byte> bytes)
@@ -23,5 +23,5 @@ internal class CqlGlobalTableSpec : ICqlSerializable
         };
     }
 
-    public int SizeOf() => Keyspace.SizeOf() + Table.SizeOf();
+    public int SizeOf() => this.Keyspace.SizeOf() + this.Table.SizeOf();
 }
