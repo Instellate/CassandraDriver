@@ -1,20 +1,38 @@
 using System;
 using System.Buffers.Binary;
+using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using CassandraDriver.Results;
 
 namespace CassandraDriver.Frames.Response;
 
-internal class CqlRows : Query
+internal class CqlRows : Query, IEnumerable<Row>
 {
-    internal required CqlQueryResponseFlags Flags { get; init; }
-    internal CqlGlobalTableSpec? GlobalTableSpec { get; init; }
-    internal CqlBytes? PagingState { get; init; }
+    private readonly CqlQueryResponseFlags _flags;
+    private readonly CqlGlobalTableSpec? _globalTableSpec;
+
+    private readonly CqlBytes? _pagingState;
+
+    // This is here for later when paging is going to be implemented
+    private readonly CassandraClient _client;
+
+    public CqlRows(CqlQueryResponseFlags flags,
+        CqlGlobalTableSpec? globalTableSpec,
+        CqlBytes? pagingState,
+        CassandraClient client)
+    {
+        this._flags = flags;
+        this._globalTableSpec = globalTableSpec;
+        this._pagingState = pagingState;
+        this._client = client;
+    }
 
     public override Row this[int index] => this.Rows[index];
     public override int Count => this.Rows.Count;
 
-    public static Query Deserialize(ref ReadOnlySpan<byte> bytes)
+    public static Query Deserialize(ref ReadOnlySpan<byte> bytes,
+        CassandraClient clientRef)
     {
         CqlQueryResponseFlags flags =
             (CqlQueryResponseFlags)BinaryPrimitives.ReadInt32BigEndian(bytes);
@@ -59,14 +77,13 @@ internal class CqlRows : Query
             rows.Add(Row.Deserialize(ref bytes, columns));
         }
 
-        CqlRows cqlRows = new()
-        {
-            Flags = flags,
-            Rows = rows,
-            GlobalTableSpec = spec,
-            PagingState = pagingState
-        };
+        return new CqlRows(flags, spec, pagingState, clientRef);
+    }
 
-        return cqlRows;
+    public IEnumerator<Row> GetEnumerator() => Rows.GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
     }
 }

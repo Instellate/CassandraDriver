@@ -115,7 +115,7 @@ public class ClientTests
         Assert.IsInstanceOf<DateTimeOffset>(udt[0]["friends_since"]);
 
         Assert.That(udt[0]["friend_id"], Is.EqualTo(1));
-        /* Assert.That(udt[0]["friends_since"],
-            Is.EqualTo(DateTime.Parse("2024-09-13 12:43:56+00:00"))); */
+        Assert.That(udt[0]["friends_since"],
+            Is.EqualTo(DateTimeOffset.Parse("2024-09-13 12:43:56+00:00")));
     }
 }

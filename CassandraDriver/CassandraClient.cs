@@ -118,7 +118,7 @@ public class CassandraClient : IDisposable
             throw new CassandraException("Didn't get result opcode");
         }
 
-        return Query.Deserialize(data.Body.Span, data.Warnings);
+        return Query.Deserialize(data.Body.Span, data.Warnings, this);
     }
 
     public async Task<Prepared> PrepareAsync(string query)
@@ -179,7 +179,7 @@ public class CassandraClient : IDisposable
             throw new CassandraException("Didn't get result opcode");
         }
 
-        return Query.Deserialize(data.Body.Span, data.Warnings);
+        return Query.Deserialize(data.Body.Span, data.Warnings, this);
     }
 
     public async Task DisconnectAsync()
