@@ -31,7 +31,7 @@ public class ClientTests
     public async Task TestQueryingAsync()
     {
         Query query = await this._client.QueryAsync(
-            "SELECT * FROM person WHERE name = ?",
+            "SELECT name, user_id, created_at, ip_addr FROM person WHERE name = ?",
             "Instellate"
         );
         Assert.That(query.Count, Is.EqualTo(1));
@@ -53,7 +53,9 @@ public class ClientTests
         );
 
         Query warningQuery =
-            await this._client.QueryAsync("SELECT * FROM person WHERE user_id = ?", 1);
+            await this._client.QueryAsync(
+                "SELECT name, user_id, created_at, ip_addr FROM person WHERE user_id = ?",
+                1);
         Assert.That(query.Count, Is.EqualTo(1));
 
         Assert.IsInstanceOf<string>(warningQuery[0]["name"]);
@@ -95,5 +97,24 @@ public class ClientTests
         Assert.That(prepared.BindMarkers[0].PartitionKeyIndex, Is.EqualTo(0));
 
         await this._client.ExecuteAsync(prepared.Id, "Instellate");
+    }
+
+    [Test]
+    public async Task TestUdtAsync()
+    {
+        Query query
+            = await this._client.QueryAsync("SELECT friends FROM person WHERE name = ?",
+                "Instellate");
+
+        Assert.IsInstanceOf<List<Row>>(query[0]["friends"]);
+
+        List<Row> udt = (List<Row>)query[0]["friends"]!;
+
+        Assert.IsInstanceOf<int>(udt[0]["friend_id"]);
+        Assert.IsInstanceOf<DateTimeOffset>(udt[0]["friends_since"]);
+
+        Assert.That(udt[0]["friend_id"], Is.EqualTo(1));
+        Assert.That(udt[0]["friends_since"],
+            Is.EqualTo(DateTime.Parse("2024-09-13 12:43:56+00:00")));
     }
 }

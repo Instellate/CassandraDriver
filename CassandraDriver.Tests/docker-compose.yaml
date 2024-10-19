@@ -1,6 +1,6 @@
 ﻿networks:
   public:
-    name: scylla_rust_driver_public
+    name: scylla_csharp_driver_public
     driver: bridge
     ipam:
       driver: default

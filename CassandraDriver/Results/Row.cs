@@ -34,8 +34,8 @@ public sealed class Row : Dictionary<string, object?>
                 key,
                 ExpressionBuilder.CreateDelegate<CreateListDelegate>(
                     value,
-                    typeof(HashSet<>),
-                    nameof(HashSet<int>.Add)
+                    typeof(List<>),
+                    nameof(List<int>.Add)
                 )
             );
         }
@@ -75,6 +75,7 @@ public sealed class Row : Dictionary<string, object?>
                 { ColumnValueType.Float, typeof(float) },
                 { ColumnValueType.Tinyint, typeof(byte) },
                 { ColumnValueType.Date, typeof(DateTime) },
+                { ColumnValueType.Udt, typeof(Row) }
             }
             .ToFrozenDictionary();
 
@@ -85,7 +86,8 @@ public sealed class Row : Dictionary<string, object?>
         CreateListFuncs;
 
 
-    internal static Row Deserialize(ref ReadOnlySpan<byte> bytes, List<Column> columns)
+    internal static Row Deserialize(ref ReadOnlySpan<byte> bytes,
+        IReadOnlyList<Column> columns)
     {
         Row row = new(columns.Count);
 
@@ -213,7 +215,16 @@ public sealed class Row : Dictionary<string, object?>
                     .Invoke(column.AdditionalType!, setCount, ref bytes);
                 break;
             case ColumnValueType.Udt:
-                throw new NotImplementedException();
+                if (column is UdtColumnValue udt)
+                {
+                    value = Deserialize(ref bytes, udt.UdtColumns);
+                }
+                else
+                {
+                    throw new CassandraException("Expected UDT, got normal column value");
+                }
+
+                break;
             case ColumnValueType.Tuple:
                 throw new NotImplementedException();
             default:
