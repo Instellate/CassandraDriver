@@ -118,4 +118,20 @@ public class ClientTests
         Assert.That(udt[0]["friends_since"],
             Is.EqualTo(DateTimeOffset.Parse("2024-09-13 12:43:56+00:00")));
     }
+
+    [Test]
+    public async Task TestMapAsync()
+    {
+        Query query
+            = await this._client.QueryAsync("SELECT houses FROM person WHERE name = ?",
+                "Instellate");
+
+        Row row = query[0];
+
+        Assert.IsInstanceOf<Dictionary<string, string>>(row["houses"]);
+
+        Dictionary<string, string> houses = (Dictionary<string, string>)row["houses"]!;
+        Assert.That(houses["Riksgatan 1, 100 12 Stockholm"],
+            Is.EqualTo("The Swedish Parliament House"));
+    }
 }

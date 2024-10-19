@@ -1,5 +1,6 @@
 using System;
 using System.Buffers.Binary;
+using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Net;
@@ -57,6 +58,11 @@ public sealed class Row : Dictionary<string, object?>
         ref ReadOnlySpan<byte> bytes
     );
 
+    private delegate object CreateMapDelegate(ColumnValue keyColumn,
+        ColumnValue valueColumn,
+        int length,
+        ref ReadOnlySpan<byte> bytes);
+
     public static readonly FrozenDictionary<ColumnValueType, Type>
         DataTypeTypes = new Dictionary<ColumnValueType, Type>()
             {
@@ -76,7 +82,9 @@ public sealed class Row : Dictionary<string, object?>
                 { ColumnValueType.Float, typeof(float) },
                 { ColumnValueType.Tinyint, typeof(byte) },
                 { ColumnValueType.Date, typeof(DateTime) },
-                { ColumnValueType.Udt, typeof(Row) }
+                { ColumnValueType.Udt, typeof(Row) },
+                { ColumnValueType.Varint, typeof(BigInteger) },
+                { ColumnValueType.Tuple, typeof(List<object?>) }
             }
             .ToFrozenDictionary();
 
@@ -85,6 +93,29 @@ public sealed class Row : Dictionary<string, object?>
 
     private static readonly FrozenDictionary<ColumnValueType, CreateListDelegate>
         CreateListFuncs;
+
+    private static readonly
+        ConcurrentDictionary<(ColumnValueType, ColumnValueType), CreateMapDelegate>
+        CreateMapDelegates = [];
+
+    private static CreateMapDelegate GetCreateMapDelegate(ColumnValueType key,
+        ColumnValueType value)
+    {
+        if (CreateMapDelegates.TryGetValue((key, value),
+                out CreateMapDelegate? mapDelegate))
+        {
+            return mapDelegate;
+        }
+        else
+        {
+            CreateMapDelegate newDelegate
+                = ExpressionBuilder.CreateMapDelegate<CreateMapDelegate>(
+                    DataTypeTypes[key],
+                    DataTypeTypes[value]);
+            CreateMapDelegates.TryAdd((key, value), newDelegate);
+            return newDelegate;
+        }
+    }
 
 
     internal static Row Deserialize(ref ReadOnlySpan<byte> bytes,
@@ -117,7 +148,8 @@ public sealed class Row : Dictionary<string, object?>
         switch (column.Type)
         {
             case ColumnValueType.Custom:
-                throw new NotImplementedException();
+                throw
+                    new NotImplementedException(); // I'll ignore this, I don't know what the usage is for this, and genuinely seems like a pain to implement
             case ColumnValueType.Ascii:
                 value = Encoding.ASCII.GetString(bytes.Slice(0, length));
                 bytes = bytes[length..];
@@ -216,7 +248,14 @@ public sealed class Row : Dictionary<string, object?>
                     .Invoke(column.AdditionalType!, listCount, ref bytes);
                 break;
             case ColumnValueType.Map:
-                throw new NotImplementedException();
+                int mapCount = BinaryPrimitives.ReadInt32BigEndian(bytes);
+                bytes = bytes[sizeof(int)..];
+                value = GetCreateMapDelegate(column.AdditionalType!.Type,
+                    column.AdditionalType2!.Type).Invoke(column.AdditionalType,
+                    column.AdditionalType2,
+                    mapCount,
+                    ref bytes);
+                break;
             case ColumnValueType.Set:
                 int setCount = BinaryPrimitives.ReadInt32BigEndian(bytes);
                 bytes = bytes[sizeof(int)..];
@@ -235,7 +274,23 @@ public sealed class Row : Dictionary<string, object?>
 
                 break;
             case ColumnValueType.Tuple:
-                throw new NotImplementedException();
+                if (column is TupleColumnValue tuple)
+                {
+                    List<object?> tupleList = new(tuple.Types.Count);
+                    foreach (ColumnValue columnValue in tuple.Types)
+                    {
+                        tupleList.Add(ParseDataTypes(columnValue, ref bytes));
+                    }
+
+                    value = tupleList;
+                }
+                else
+                {
+                    throw new CassandraException(
+                        "Expected tuple, got normal column value");
+                }
+
+                break;
             default:
                 throw new ArgumentOutOfRangeException(column.Type.ToString());
         }

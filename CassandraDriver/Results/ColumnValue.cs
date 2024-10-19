@@ -35,6 +35,8 @@ public class ColumnValue
                 break;
             case ColumnValueType.Udt:
                 return UdtColumnValue.Deserialize(ref bytes);
+            case ColumnValueType.Tuple:
+                return TupleColumnValue.Deserialize(ref bytes);
         }
 
         return new ColumnValue()
