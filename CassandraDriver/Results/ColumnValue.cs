@@ -5,7 +5,7 @@ namespace CassandraDriver.Results;
 
 public class ColumnValue
 {
-    private ColumnValue()
+    internal ColumnValue()
     {
     }
 
@@ -33,6 +33,8 @@ public class ColumnValue
                 additionalType = Deserialize(ref bytes);
                 additionalType2 = Deserialize(ref bytes);
                 break;
+            case ColumnValueType.Udt:
+                return UdtColumnValue.Deserialize(ref bytes);
         }
 
         return new ColumnValue()
