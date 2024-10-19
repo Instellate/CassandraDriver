@@ -1,7 +1,7 @@
-on:
-  push:
-    branches:
-      - master
+# on:
+#  push:
+#    branches:
+#      - master
 
 permissions:
   actions: read
@@ -35,10 +35,10 @@ jobs:
         with:
           path: 'docs/_site/'
           
-      - name: Delete artifact
-        uses: geekyeggo/delete-artifact@v5
-        with: 
-          name: github-pages
+#      - name: Delete artifact
+#        uses: geekyeggo/delete-artifact@v5
+#        with: 
+#          name: github-pages
       
       - name: Deploy website
         id: deployment
