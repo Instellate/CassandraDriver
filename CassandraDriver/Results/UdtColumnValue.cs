@@ -1,20 +1,17 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Runtime.Serialization;
 using CassandraDriver.Frames;
 
 namespace CassandraDriver.Results;
 
-public class UdtColumnValue : ColumnValue
+public sealed class UdtColumnValue : ColumnValue
 {
     public required IReadOnlyList<Column> UdtColumns { get; init; }
     public required string TypeName { get; init; }
     public required string Keyspace { get; init; }
 
-
-    public new static ColumnValue Deserialize(ref ReadOnlySpan<byte> bytes)
+    internal new static ColumnValue Deserialize(ref ReadOnlySpan<byte> bytes)
     {
         CqlString keyspace = CqlString.Deserialize(ref bytes);
         CqlString typeName = CqlString.Deserialize(ref bytes);
