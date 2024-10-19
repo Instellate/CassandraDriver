@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using CassandraDriver.Results;
 
 namespace CassandraDriver.Frames.Response;
@@ -10,8 +11,11 @@ internal class CqlSetKeyspace : Query
         this.SetKeyspace = keyspace;
     }
 
-    public override Row this[int index]
-        => throw new CassandraException("Cannot index on query type \"Set keyspace\"");
+    public override IReadOnlyList<Row> Rows =>
+        throw new CassandraException("Set keyspace does not implement rows");
+
+    public override Row this[int index] =>
+        throw new CassandraException("Cannot index on query type \"Set keyspace\"");
 
     public override int Count => 0;
 

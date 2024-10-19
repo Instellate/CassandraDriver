@@ -2,7 +2,6 @@ using System;
 using System.Buffers.Binary;
 using System.Collections;
 using System.Collections.Generic;
-using System.Threading;
 using CassandraDriver.Results;
 
 namespace CassandraDriver.Frames.Response;
@@ -11,17 +10,21 @@ internal class CqlRows : Query, IEnumerable<Row>
 {
     private readonly CqlQueryResponseFlags _flags;
     private readonly CqlGlobalTableSpec? _globalTableSpec;
-
     private readonly CqlBytes? _pagingState;
+    private readonly IReadOnlyList<Row> _rows;
 
     // This is here for later when paging is going to be implemented
     private readonly CassandraClient _client;
 
-    public CqlRows(CqlQueryResponseFlags flags,
+    public override IReadOnlyList<Row> Rows => this._rows;
+
+    public CqlRows(IReadOnlyList<Row> rows,
+        CqlQueryResponseFlags flags,
         CqlGlobalTableSpec? globalTableSpec,
         CqlBytes? pagingState,
         CassandraClient client)
     {
+        this._rows = rows;
         this._flags = flags;
         this._globalTableSpec = globalTableSpec;
         this._pagingState = pagingState;
@@ -77,7 +80,7 @@ internal class CqlRows : Query, IEnumerable<Row>
             rows.Add(Row.Deserialize(ref bytes, columns));
         }
 
-        return new CqlRows(flags, spec, pagingState, clientRef);
+        return new CqlRows(rows, flags, spec, pagingState, clientRef);
     }
 
     public IEnumerator<Row> GetEnumerator() => Rows.GetEnumerator();

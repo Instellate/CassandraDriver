@@ -3,6 +3,7 @@ using System.Buffers.Binary;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Net;
+using System.Numerics;
 using System.Text;
 
 namespace CassandraDriver.Results;
@@ -138,7 +139,13 @@ public sealed class Row : Dictionary<string, object?>
                 bytes = bytes[sizeof(int)..];
                 break;
             case ColumnValueType.Decimal:
-                throw new NotImplementedException();
+                int scale = BinaryPrimitives.ReadInt32BigEndian(bytes);
+                bytes = bytes[sizeof(int)..];
+                BigInteger unscaled = new(bytes[..(length - sizeof(int))], false, true);
+                decimal dec = (decimal)unscaled;
+                value = dec * (decimal)Math.Pow(10, -1 * scale);
+                bytes = bytes[(length - sizeof(int))..];
+                break;
             case ColumnValueType.Double:
                 value = BinaryPrimitives.ReadDoubleBigEndian(bytes);
                 bytes = bytes[sizeof(double)..];
@@ -168,7 +175,9 @@ public sealed class Row : Dictionary<string, object?>
                 bytes = bytes[length..];
                 break;
             case ColumnValueType.Varint:
-                throw new NotImplementedException();
+                value = new BigInteger(bytes[..length], false, true);
+                bytes = bytes[length..];
+                break;
             case ColumnValueType.Timeuuid:
                 Span<byte> timeUuid = stackalloc byte[16];
                 bytes.CopyTo(timeUuid);

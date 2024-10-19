@@ -50,7 +50,8 @@ public class Column
         );
     }
 
-    internal static List<Column> DeseralizeColumns(ref ReadOnlySpan<byte> bytes)
+    internal static IReadOnlyList<Column> DeseralizeColumns(ref ReadOnlySpan<byte> bytes,
+        IReadOnlyList<Column>? preColumns = null)
     {
         CqlQueryResponseFlags flags =
             (CqlQueryResponseFlags)BinaryPrimitives.ReadInt32BigEndian(bytes);
@@ -69,19 +70,32 @@ public class Column
             CqlGlobalTableSpec.Deserialize(ref bytes);
         }
 
+        IReadOnlyList<Column> columns;
         if ((flags & CqlQueryResponseFlags.NoMetadata) != 0)
         {
-            throw new NotImplementedException();
+            if (preColumns is not null)
+            {
+                columns = preColumns;
+            }
+            else
+            {
+                throw new CassandraException(
+                    "Got no metadata flag without any pre filled columns");
+            }
         }
-
-        List<Column> columns = new(columnCount);
-        for (int i = 0; i < columnCount; i++)
+        else
         {
-            columns.Add(Deserialize(
-                    ref bytes,
-                    (flags & CqlQueryResponseFlags.GlobalTableSpec) == 0
-                )
-            );
+            List<Column> newColumns = new List<Column>(columnCount);
+            for (int i = 0; i < columnCount; i++)
+            {
+                newColumns.Add(Deserialize(
+                        ref bytes,
+                        (flags & CqlQueryResponseFlags.GlobalTableSpec) == 0
+                    )
+                );
+            }
+
+            columns = newColumns;
         }
 
         return columns;
