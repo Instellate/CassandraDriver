@@ -14,7 +14,7 @@ public class UdtColumnValue : ColumnValue
     public required string Keyspace { get; init; }
 
 
-    public static ColumnValue Deserialize(ref ReadOnlySpan<byte> bytes)
+    public new static ColumnValue Deserialize(ref ReadOnlySpan<byte> bytes)
     {
         CqlString keyspace = CqlString.Deserialize(ref bytes);
         CqlString typeName = CqlString.Deserialize(ref bytes);
