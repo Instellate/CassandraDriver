@@ -1,11 +1,11 @@
 # CassandraDriver
-A C# driver made for experimenting.  
-Why did you want to experiment with this? Cause I have never done anything in low TCP, so thougt this would be fun.  
-This will try to be feature complete somewhere in the future. This includes client predition routing for clusters and stuff, but right now we just have a single way connection.
+A driver for the database cassandra made in C#. Made to be somewhat better than the [datastax driver](https://github.com/datastax/csharp-driver)  
+Provides support for source generation and later tools for migration and related tools.
 
+> [!WARNING]  
+> This tools has not been tested on large scale or on any production enviroment.  
+> We recommend against using for now unless you want to contribute or know what you are doing.
 
-## Do you accept contributions?
-Sure, why not. As long as it is quality code, even if this is a "experiment" I am still trying to optimise code as well as I know.
-
-### How to contribute!
-TODO!
+## Documentation
+For now there is no documentation or example for now.
+Look out in the future for it.
