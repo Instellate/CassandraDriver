@@ -5,7 +5,8 @@ title: Data type mapping
 
 # Data type mapping
 
-A table of how the CQL values get's mapped to .NET values.
+A table of how the CQL values get's mapped to .NET values.  
+All values listed here are the ones that is listed by [ScyllaDb](https://opensource.docs.scylladb.com/stable/cql/types.html)
 
 | CQL Type     | .NET Type      |
 |--------------|----------------|
