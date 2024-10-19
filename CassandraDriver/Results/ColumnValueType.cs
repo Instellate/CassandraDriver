@@ -1,7 +1,11 @@
 namespace CassandraDriver.Results;
 
+/// <summary>
+/// Enum for all the types a column can be. Read more [here](https://opensource.docs.scylladb.com/stable/cql/types.html) for more indebt information
+/// </summary>
 public enum ColumnValueType : short
 {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
     Custom = 0x00,
     Ascii = 0x01,
     Bigint = 0x02,
@@ -27,4 +31,5 @@ public enum ColumnValueType : short
     Set = 0x22,
     Udt = 0x30,
     Tuple = 0x31,
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 }

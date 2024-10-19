@@ -19,11 +19,17 @@ public class CqlRowDeserializeGenerator : IIncrementalGenerator
 
                 namespace CassandraDriver.Serialization
                 {
+                    /// <summary>
+                    /// Marks a class as deserializable for the source generator
+                    /// </summary>
                     [AttributeUsage(AttributeTargets.Class)]
                     public class CqlDeserializeAttribute : Attribute
                     {
                     }
                     
+                    /// <summary>
+                    /// Used to set the name for the column
+                    /// </summary>
                     [AttributeUsage(AttributeTargets.Property)]
                     public class CqlColumnNameAttribute : Attribute
                     {

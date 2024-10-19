@@ -1,12 +1,11 @@
 using System;
 using System.Buffers.Binary;
-using System.Collections;
 using System.Collections.Generic;
 using CassandraDriver.Results;
 
 namespace CassandraDriver.Frames.Response;
 
-internal class CqlRows : Query, IEnumerable<Row>
+internal class CqlRows : Query
 {
     private readonly CqlQueryResponseFlags _flags;
     private readonly CqlGlobalTableSpec? _globalTableSpec;
@@ -81,12 +80,5 @@ internal class CqlRows : Query, IEnumerable<Row>
         }
 
         return new CqlRows(rows, flags, spec, pagingState, clientRef);
-    }
-
-    public IEnumerator<Row> GetEnumerator() => Rows.GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
     }
 }

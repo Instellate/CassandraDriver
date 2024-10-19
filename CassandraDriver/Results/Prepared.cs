@@ -6,8 +6,17 @@ using CassandraDriver.Frames.Response;
 
 namespace CassandraDriver.Results;
 
+/// <summary>
+/// A prepared statement
+/// </summary>
 public class Prepared
 {
+    /// <summary>
+    /// The default constructor for <see cref="Prepared"/>
+    /// </summary>
+    /// <param name="id">The ID for the prepared statement</param>
+    /// <param name="columns">The columns for the prepared statement</param>
+    /// <param name="bindMarkers">The bind marekrs for the prepared statement</param>
     public Prepared(byte[] id,
         IReadOnlyList<Column> columns,
         IReadOnlyList<BindMarker> bindMarkers)
@@ -17,8 +26,19 @@ public class Prepared
         this.BindMarkers = bindMarkers;
     }
 
+    /// <summary>
+    /// The prepared statements ID
+    /// </summary>
     public byte[] Id { get; init; }
+
+    /// <summary>
+    /// The columns for the prepared statement
+    /// </summary>
     public IReadOnlyList<Column> Columns { get; init; }
+
+    /// <summary>
+    /// The bind markers for the prepared statement
+    /// </summary>
     public IReadOnlyList<BindMarker> BindMarkers { get; init; }
 
     internal static Prepared Deserialize(ref ReadOnlySpan<byte> bytes)

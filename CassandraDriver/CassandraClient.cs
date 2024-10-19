@@ -12,6 +12,9 @@ using CommunityToolkit.HighPerformance.Buffers;
 
 namespace CassandraDriver;
 
+/// <summary>
+/// A client representing a connection to a single node
+/// </summary>
 public class CassandraClient : IDisposable
 {
     private readonly Socket _socket;
@@ -28,9 +31,22 @@ public class CassandraClient : IDisposable
 
     internal readonly string Host;
 
+    /// <summary>
+    /// A boolean telling if the client is connected to the node or not
+    /// </summary>
     public bool Connected { get; private set; }
+
+    /// <summary>
+    /// The default namespace that was used when initialising the request
+    /// </summary>
     public string? DefaultKeyspace { get; set; }
 
+    /// <summary>
+    /// The default constructor for creating the client
+    /// </summary>
+    /// <param name="host">The name of the node to connect to</param>
+    /// <param name="port">The port the node uses for the native protocol, defaults to 9042</param>
+    /// <param name="defaultKeyspace">The default keyspace to use when connecting</param>
     public CassandraClient(string host, int port = 9042, string? defaultKeyspace = null)
     {
         this._socket = new Socket(
@@ -45,6 +61,10 @@ public class CassandraClient : IDisposable
         this.DefaultKeyspace = defaultKeyspace;
     }
 
+    /// <summary>
+    /// Connects the client to the node
+    /// </summary>
+    /// <exception cref="CassandraException"></exception>
     public async Task ConnectAsync()
     {
         await this._socket.ConnectAsync(this.Host, this._port);
@@ -91,7 +111,7 @@ public class CassandraClient : IDisposable
     /// </summary>
     /// <param name="query">The query string</param>
     /// <param name="objects">Parameter objects</param>
-    /// <returns></returns>
+    /// <returns>The result of the query</returns>
     /// <exception cref="CassandraException"></exception>
     public async Task<Query> QueryAsync(string query, params object[] objects)
     {
@@ -121,6 +141,12 @@ public class CassandraClient : IDisposable
         return Query.Deserialize(data.Body.Span, data.Warnings, this);
     }
 
+    /// <summary>
+    /// Prepares a statement for later execution
+    /// </summary>
+    /// <param name="query">The query to prepare</param>
+    /// <returns>The result from the node</returns>
+    /// <exception cref="CassandraException"></exception>
     public async Task<Prepared> PrepareAsync(string query)
     {
         CqlLongString queryStr = new(query);
@@ -155,6 +181,13 @@ public class CassandraClient : IDisposable
         return StartDeserialize();
     }
 
+    /// <summary>
+    /// Executes a prepared statement
+    /// </summary>
+    /// <param name="id">The id of the prepared statement</param>
+    /// <param name="param">The parameters used if there's any</param>
+    /// <returns>The result of the database</returns>
+    /// <exception cref="CassandraException"></exception>
     public async Task<Query> ExecuteAsync(byte[] id, params object[] param)
     {
         CqlExecute cqlExecute = new(id, param, CqlConsistency.One);
@@ -182,6 +215,9 @@ public class CassandraClient : IDisposable
         return Query.Deserialize(data.Body.Span, data.Warnings, this);
     }
 
+    /// <summary>
+    /// Disconnects the client from the node
+    /// </summary>
     public async Task DisconnectAsync()
     {
         await this._tokenSource.CancelAsync();
@@ -330,6 +366,9 @@ public class CassandraClient : IDisposable
         });
     }
 
+    /// <summary>
+    /// Disposes the client
+    /// </summary>
     public void Dispose()
     {
         this.Connected = false;

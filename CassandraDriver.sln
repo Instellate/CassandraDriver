@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CassandraDriver.Tests", "Ca
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CassandraDriver.Generators", "CassandraDriver.Generators\CassandraDriver.Generators.csproj", "{63C8C56D-C34A-49EB-AABF-D799D0F1D8B4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CassandraDriver.Sample", "CassandraDriver.Sample\CassandraDriver.Sample.csproj", "{E8664120-2570-4EB5-BCE8-FADF2D9CEC14}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CassandraDriver.Samples", "CassandraDriver.Samples\CassandraDriver.Samples.csproj", "{E8664120-2570-4EB5-BCE8-FADF2D9CEC14}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

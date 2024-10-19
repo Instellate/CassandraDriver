@@ -1,6 +1,6 @@
 namespace CassandraDriver.Frames;
 
-public enum CqlOpCode : byte
+internal enum CqlOpCode : byte
 {
     Error = 0x00,
     Startup = 0x01,

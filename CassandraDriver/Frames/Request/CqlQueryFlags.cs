@@ -3,7 +3,7 @@ using System;
 namespace CassandraDriver.Frames.Request;
 
 [Flags]
-public enum CqlQueryFlags : byte
+internal enum CqlQueryFlags : byte
 {
     None = 0x00,
     Values = 0x01,

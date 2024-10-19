@@ -8,6 +8,9 @@ using IntervalTree;
 
 namespace CassandraDriver;
 
+/// <summary>
+/// Represent a pool of nodes, stores prepared statements for each node and also calculates which node a statement should go to
+/// </summary>
 public class CassandraPool : IDisposable
 {
     private readonly
@@ -17,6 +20,9 @@ public class CassandraPool : IDisposable
     private readonly IReadOnlyList<CassandraClient> _nodes;
     private readonly ConcurrentDictionary<string, PoolPrepared> _prepareds = [];
 
+    /// <summary>
+    /// The amount of nodes that was found
+    /// </summary>
     public int NodeCount => this._nodes.Count;
 
     internal CassandraPool(
@@ -28,6 +34,13 @@ public class CassandraPool : IDisposable
         this._nodes = nodes;
     }
 
+    /// <summary>
+    /// Query the pool. Querying will automatically prepare all statements if they don't exist, and execute it. It will also find the right place to query on and handles dead nodes.
+    /// </summary>
+    /// <param name="query">The query used when querying</param>
+    /// <param name="param">Parameters provided</param>
+    /// <returns>The result from the database</returns>
+    /// <exception cref="CassandraException"></exception>
     public async Task<Query> QueryAsync(string query, params object[] param)
     {
         if (!this._prepareds.TryGetValue(query, out PoolPrepared? prepared))
@@ -123,6 +136,13 @@ public class CassandraPool : IDisposable
         return await node.ExecuteAsync(id, param);
     }
 
+    /// <summary>
+    /// Query the database and converts it into a deserializable object. For more info <see cref="QueryAsync"/>
+    /// </summary>
+    /// <param name="query"></param>
+    /// <param name="param"></param>
+    /// <typeparam name="T">The deserializable object used</typeparam>
+    /// <returns>A list of T</returns>
     public async Task<List<T>> QueryAsync<T>(string query, params object[] param)
         where T : ICqlDeserializable<T>
     {
@@ -152,6 +172,9 @@ public class CassandraPool : IDisposable
         return node;
     }
 
+    /// <summary>
+    /// Disconnects all nodes in the pool
+    /// </summary>
     public async Task DisconnectAsync()
     {
         List<Task> disconnectTasks = new(this._nodes.Count);
@@ -163,6 +186,9 @@ public class CassandraPool : IDisposable
         await Task.WhenAll(disconnectTasks);
     }
 
+    /// <summary>
+    /// Dispose the pool
+    /// </summary>
     public void Dispose()
     {
         foreach (CassandraClient cassandraClient in this._nodes)

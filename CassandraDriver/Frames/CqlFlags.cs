@@ -3,7 +3,7 @@ using System;
 namespace CassandraDriver.Frames;
 
 [Flags]
-public enum CqlFlags : byte
+internal enum CqlFlags : byte
 {
     Compression = 0x01,
     Tracing = 0x02,

@@ -1,6 +1,6 @@
 using CassandraDriver.Serialization;
 
-namespace CassandraDriver.Sample.Models;
+namespace CassandraDriver.Samples.Models;
 
 [CqlDeserialize]
 public partial class InfoModel

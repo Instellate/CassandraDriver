@@ -5,10 +5,24 @@ using CassandraDriver.Frames;
 
 namespace CassandraDriver.Results;
 
+/// <summary>
+/// The column value for a UDT
+/// </summary>
 public sealed class UdtColumnValue : ColumnValue
 {
+    /// <summary>
+    /// All the columns in the UDT
+    /// </summary>
     public required IReadOnlyList<Column> UdtColumns { get; init; }
+
+    /// <summary>
+    /// The name of the UDT
+    /// </summary>
     public required string TypeName { get; init; }
+
+    /// <summary>
+    /// The keyspace the UDT is in
+    /// </summary>
     public required string Keyspace { get; init; }
 
     internal new static ColumnValue Deserialize(ref ReadOnlySpan<byte> bytes)

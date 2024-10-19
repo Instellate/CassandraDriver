@@ -4,8 +4,14 @@ using System.Collections.Generic;
 
 namespace CassandraDriver.Results;
 
+/// <summary>
+/// The column value for a tuple
+/// </summary>
 public sealed class TupleColumnValue : ColumnValue
 {
+    /// <summary>
+    /// All the types in the tuple
+    /// </summary>
     public required IReadOnlyList<ColumnValue> Types { get; init; }
 
     internal new static ColumnValue Deserialize(ref ReadOnlySpan<byte> bytes)
