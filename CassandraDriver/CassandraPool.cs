@@ -21,7 +21,8 @@ public class CassandraPool : IDisposable
 
     internal CassandraPool(
         ConcurrentDictionary<KeyspaceTableHash, IntervalTree<long, CassandraClient>>
-            intervals, IReadOnlyList<CassandraClient> nodes)
+            intervals,
+        IReadOnlyList<CassandraClient> nodes)
     {
         this._intervals = intervals;
         this._nodes = nodes;
@@ -120,6 +121,20 @@ public class CassandraPool : IDisposable
         }
 
         return await node.ExecuteAsync(id, param);
+    }
+
+    public async Task<List<T>> QueryAsync<T>(string query, params object[] param)
+        where T : ICqlDeserializable<T>
+    {
+        Query result = await this.QueryAsync(query);
+
+        List<T> list = new(result.Count);
+        foreach (Row row in result.Rows)
+        {
+            list.Add(T.DeserializeRow(row));
+        }
+
+        return list;
     }
 
     private CassandraClient? FindAnyAliveNode()
