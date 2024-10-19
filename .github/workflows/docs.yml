@@ -1,20 +1,20 @@
-# on:
-#  push:
-#    branches:
-#      - master
+on:
+  push:
+    branches:
+      - *
 
 permissions:
   actions: read
   pages: write
   id-token: write
-  
-concurrency: 
+
+concurrency:
   group: "pages"
   cancel-in-progress: false
-  
+
 jobs:
   publish-docs:
-    environment: 
+    environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
@@ -25,21 +25,21 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 8.x
-          
+
       - run: dotnet tool update -g docfx
       - run: dotnet build -c Release
       - run: docfx docs/docfx.json
-      
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: 'docs/_site/'
-          
-#      - name: Delete artifact
-#        uses: geekyeggo/delete-artifact@v5
-#        with: 
-#          name: github-pages
       
+      #      - name: Delete artifact
+      #        uses: geekyeggo/delete-artifact@v5
+      #        with: 
+      #          name: github-pages
+
       - name: Deploy website
         id: deployment
         uses: actions/deploy-pages@v4
