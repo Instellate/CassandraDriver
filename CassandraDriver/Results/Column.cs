@@ -6,6 +6,9 @@ using CassandraDriver.Frames.Response;
 
 namespace CassandraDriver.Results;
 
+/// <summary>
+/// Represents a column returned from the database
+/// </summary>
 public class Column
 {
     internal Column(
@@ -21,9 +24,24 @@ public class Column
         this.Value = value;
     }
 
+    /// <summary>
+    /// The column name
+    /// </summary>
     public string Name { get; init; }
+
+    /// <summary>
+    /// The column value
+    /// </summary>
     public ColumnValue Value { get; init; }
+
+    /// <summary>
+    /// The column 's key space
+    /// </summary>
     public string? Keyspace { get; init; }
+
+    /// <summary>
+    /// The table the column is related to
+    /// </summary>
     public string? Table { get; init; }
 
     internal static Column Deserialize(
@@ -85,7 +103,7 @@ public class Column
         }
         else
         {
-            List<Column> newColumns = new List<Column>(columnCount);
+            List<Column> newColumns = new(columnCount);
             for (int i = 0; i < columnCount; i++)
             {
                 newColumns.Add(Deserialize(

@@ -6,7 +6,7 @@ using CommunityToolkit.HighPerformance.Buffers;
 
 namespace CassandraDriver.Frames;
 
-public struct CqlValue : ICqlSerializable
+internal struct CqlValue : ICqlSerializable
 {
     internal readonly byte[] Bytes;
 

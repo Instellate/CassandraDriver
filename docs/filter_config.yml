@@ -1,0 +1,9 @@
+apiRules:
+  - exclude:
+      uidRegex: ^CassandraDriver\.Tests.*$
+  - exclude:
+      uidRegex: ^CassandraDriver\.Samples.*$
+  - exclude:
+      uidRegex: ^CassandraDriver\.Generators.*$
+  - exclude:
+      uidRegex: ^System.*$

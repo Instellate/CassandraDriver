@@ -3,14 +3,30 @@ using System.Buffers.Binary;
 
 namespace CassandraDriver.Results;
 
+/// <summary>
+/// Values related to columns
+/// </summary>
 public class ColumnValue
 {
     internal ColumnValue()
     {
     }
 
+    /// <summary>
+    /// The type of the column
+    /// </summary>
     public required ColumnValueType Type { get; init; }
+
+    /// <summary>
+    /// Additional type
+    /// </summary>
+    /// <remarks>This should be migrated into it's own class</remarks>
     public ColumnValue? AdditionalType { get; init; }
+
+    /// <summary>
+    /// Additional type2
+    /// </summary>
+    /// <remarks>This should be migrated into it's own class</remarks>
     public ColumnValue? AdditionalType2 { get; init; }
 
     internal static ColumnValue Deserialize(ref ReadOnlySpan<byte> bytes)

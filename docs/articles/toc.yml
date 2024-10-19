@@ -1,0 +1,10 @@
+- name: Index
+  href: /
+  topicUid: articles.index
+- name: Getting started
+  href: /getting-started
+  topicUid: articles.getting-started
+- name: Data type mapping
+  href: /data-type-mapping
+  topicUid: articles.data-type-mapping
+  

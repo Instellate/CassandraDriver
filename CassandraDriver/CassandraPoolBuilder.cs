@@ -9,6 +9,9 @@ using IntervalTree;
 
 namespace CassandraDriver;
 
+/// <summary>
+/// A builder used for building a cassandra pool
+/// </summary>
 public class CassandraPoolBuilder
 {
     private readonly List<NodeInformation> _nodes = [];
@@ -17,15 +20,20 @@ public class CassandraPoolBuilder
     private string? _defaultKeyspace;
     private int _defaultPort = 9042;
 
+    /// <summary>
+    /// Creates a builder
+    /// </summary>
+    /// <returns>The builder</returns>
     public static CassandraPoolBuilder CreateBuilder()
     {
         return new CassandraPoolBuilder();
     }
 
     /// <summary>
-    /// Adds a new node.
+    /// Adds a new node
     /// </summary>
-    /// <param name="information">The information for the node.</param>
+    /// <remarks>Usually you only need to add one node and activate <see cref="DiscoverOtherNodes"/> and rest of the nodes will be discovered automatically</remarks>
+    /// <param name="information">The information for the node</param>
     /// <returns>The builder</returns>
     public CassandraPoolBuilder AddNode(NodeInformation information)
     {
@@ -33,6 +41,10 @@ public class CassandraPoolBuilder
         return this;
     }
 
+    /// <inheritdoc cref="AddNode(CassandraDriver.NodeInformation)"/>
+    /// <param name="hostname">The hostname for the node</param>
+    /// <param name="port">The port for the node</param>
+    /// <returns>The builder</returns>
     public CassandraPoolBuilder AddNode(string hostname, int port = 9042)
     {
         AddNode(new NodeInformation(hostname, port));
@@ -40,8 +52,8 @@ public class CassandraPoolBuilder
     }
 
     /// <summary>
-    /// Allow the builder to discover rest of the nodes.
-    /// Requires one node and is recommended.
+    /// Allow the builder to discover rest of the nodes
+    /// Requires at least one node
     /// </summary>
     /// <returns>The builder</returns>
     public CassandraPoolBuilder DiscoverOtherNodes()
@@ -62,7 +74,7 @@ public class CassandraPoolBuilder
     }
 
     /// <summary>
-    /// Set the default port that is used when discovering and creating nodes.
+    /// Set the default port that is used when discovering and creating nodes
     /// </summary>
     /// <param name="port">The port to be used by default</param>
     /// <returns>The builder</returns>
@@ -73,12 +85,13 @@ public class CassandraPoolBuilder
     }
 
     /// <summary>
-    /// Blocks a keyspace from being registered into the interval.
+    /// Blocks a keyspace from being registered into the interval
     /// </summary>
     /// <remarks>
     /// Useful if you do not want to register all the system keyspaces in the intervals.
     /// They can take up a bit of memory as there's many of them.
-    /// Also useful if you know the application uses only some specific keyspaces. 
+    /// Also useful if you know the application uses only some specific keyspaces.
+    /// It is recommended to block keyspace `system`.
     /// </remarks>
     /// <returns>The builder</returns>
     public CassandraPoolBuilder BlockKeyspace(string keyspace)
@@ -87,6 +100,11 @@ public class CassandraPoolBuilder
         return this;
     }
 
+    /// <summary>
+    /// Builds the cassandra pool
+    /// </summary>
+    /// <returns>A newly created cassandra pool</returns>
+    /// <exception cref="ArgumentOutOfRangeException">There was no node added</exception>
     public async Task<CassandraPool> BuildAsync()
     {
         if (this._nodes.Count <= 0)

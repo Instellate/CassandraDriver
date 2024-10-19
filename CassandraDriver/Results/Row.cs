@@ -9,6 +9,9 @@ using System.Text;
 
 namespace CassandraDriver.Results;
 
+/// <summary>
+/// A row from the database
+/// </summary>
 public sealed class Row : Dictionary<string, object?>
 {
     private Row(int reserved) : base(reserved)
@@ -63,7 +66,7 @@ public sealed class Row : Dictionary<string, object?>
         int length,
         ref ReadOnlySpan<byte> bytes);
 
-    public static readonly FrozenDictionary<ColumnValueType, Type>
+    internal static readonly FrozenDictionary<ColumnValueType, Type>
         DataTypeTypes = new Dictionary<ColumnValueType, Type>()
             {
                 { ColumnValueType.Ascii, typeof(string) },

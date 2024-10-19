@@ -2,13 +2,27 @@ using System;
 
 namespace CassandraDriver;
 
+/// <summary>
+/// The murmur3 hashing algorithm used to find where data corresponds to
+/// </summary>
 public static class CassandraMurmur3Hash
 {
+    /// <summary>
+    /// Calculates the primary key
+    /// </summary>
+    /// <param name="key"></param>
+    /// <returns></returns>
     public static long CalculatePrimaryKey(ReadOnlySpan<byte> key)
     {
         return CalculateHash(key, 0).Item1;
     }
 
+    /// <summary>
+    /// Calculates the hash, returns two different hashes
+    /// </summary>
+    /// <param name="key">The key to be used</param>
+    /// <param name="seed">The seed, not used in the library</param>
+    /// <returns>Two hashes, the first one is what is used by the database and library</returns>
     public static unsafe (long, long) CalculateHash(ReadOnlySpan<byte> key, ulong seed)
     {
         Span<long> result = stackalloc long[2];
@@ -41,7 +55,8 @@ public static class CassandraMurmur3Hash
         return k;
     }
 
-    private static unsafe void MurmurHash3_x64_128_cassandra(void* key, int len,
+    private static unsafe void MurmurHash3_x64_128_cassandra(void* key,
+        int len,
         long seed,
         void* @out)
     {

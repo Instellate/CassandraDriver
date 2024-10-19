@@ -1,5 +1,6 @@
 using System;
 using System.Buffers.Binary;
+using System.Collections;
 using System.Collections.Generic;
 using CassandraDriver.Frames;
 using CassandraDriver.Frames.Response;
@@ -10,13 +11,28 @@ namespace CassandraDriver.Results;
 /// The basic class for results, includes queries, prepare, and execute.
 /// Do not inherit and implement it yourself.
 /// </summary>
-public abstract class Query
+public abstract class Query : IEnumerable<Row>
 {
-    private List<String>? _warnings;
+    private List<string>? _warnings;
 
+    /// <summary>
+    /// The query kind
+    /// </summary>
     public QueryKind Kind { get; internal init; }
+
+    /// <summary>
+    /// The rows for the prepared statement
+    /// </summary>
     public abstract IReadOnlyList<Row> Rows { get; }
+
+    /// <summary>
+    /// THe set keyspace for the query
+    /// </summary>
     public string SetKeyspace { get; internal init; } = null!;
+
+    /// <summary>
+    /// Warnings in the query
+    /// </summary>
     public IReadOnlyList<string>? Warnings => this._warnings;
 
     /// <summary>
@@ -68,4 +84,12 @@ public abstract class Query
 
         return query;
     }
+
+    /// <summary>
+    /// Get's the enumerator for rows
+    /// </summary>
+    /// <returns></returns>
+    public IEnumerator<Row> GetEnumerator() => Rows.GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
