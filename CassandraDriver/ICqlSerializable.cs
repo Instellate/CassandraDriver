@@ -2,7 +2,7 @@ using CommunityToolkit.HighPerformance.Buffers;
 
 namespace CassandraDriver;
 
-public interface ICqlSerializable
+internal interface ICqlSerializable
 {
     public void Serialize(ArrayPoolBufferWriter<byte> writer);
 
