@@ -34,6 +34,12 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: 'docs/_site/'
+          
+      - name: Delete artifact
+        uses: geekyeggo/delete-artifact@v5
+        with: 
+          name: github-pages
+      
       - name: Deploy website
         id: deployment
         uses: actions/deploy-pages@v4
