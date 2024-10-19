@@ -30,7 +30,9 @@ public abstract class Query
     /// </summary>
     public abstract int Count { get; }
 
-    internal static Query Deserialize(ReadOnlySpan<byte> bytes, CqlStringList? warnings)
+    internal static Query Deserialize(ReadOnlySpan<byte> bytes,
+        CqlStringList? warnings,
+        CassandraClient clientRef)
     {
         QueryKind kind = (QueryKind)BinaryPrimitives.ReadInt32BigEndian(bytes);
         bytes = bytes[sizeof(QueryKind)..];
@@ -42,7 +44,7 @@ public abstract class Query
                 query = CqlVoid.Instance;
                 break;
             case QueryKind.Rows:
-                query = CqlRows.Deserialize(ref bytes);
+                query = CqlRows.Deserialize(ref bytes, clientRef);
                 break;
             case QueryKind.SetKeyspace:
                 query = CqlSetKeyspace.Deserialize(ref bytes);
