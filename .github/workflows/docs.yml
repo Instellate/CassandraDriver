@@ -31,10 +31,9 @@ jobs:
       - run: docfx docs/docfx.json
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-pages-artifact@v1
         with:
           path: 'docs/_site/'
-          name: 'github-pages'
 
       - name: Deploy website
         id: deployment
