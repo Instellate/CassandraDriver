@@ -8,7 +8,9 @@ namespace CassandraDriver.Results;
 
 public class Prepared
 {
-    public Prepared(byte[] id, List<Column> columns, List<BindMarker> bindMarkers)
+    public Prepared(byte[] id,
+        IReadOnlyList<Column> columns,
+        IReadOnlyList<BindMarker> bindMarkers)
     {
         this.Id = id;
         this.Columns = columns;
@@ -16,8 +18,8 @@ public class Prepared
     }
 
     public byte[] Id { get; init; }
-    public List<Column> Columns { get; init; }
-    public List<BindMarker> BindMarkers { get; init; }
+    public IReadOnlyList<Column> Columns { get; init; }
+    public IReadOnlyList<BindMarker> BindMarkers { get; init; }
 
     internal static Prepared Deserialize(ref ReadOnlySpan<byte> bytes)
     {
@@ -88,7 +90,7 @@ public class Prepared
             );
         }
 
-        List<Column> columns = Column.DeseralizeColumns(ref bytes);
+        IReadOnlyList<Column> columns = Column.DeseralizeColumns(ref bytes);
 
         return new Prepared(id.Bytes.ToArray(), columns, bindMarkers);
     }

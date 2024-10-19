@@ -15,7 +15,7 @@ public abstract class Query
     private List<String>? _warnings;
 
     public QueryKind Kind { get; internal init; }
-    public IReadOnlyList<Row> Rows { get; internal init; } = null!;
+    public abstract IReadOnlyList<Row> Rows { get; }
     public string SetKeyspace { get; internal init; } = null!;
     public IReadOnlyList<string>? Warnings => this._warnings;
 
