@@ -20,20 +20,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: .NET setup
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.x
+          dotnet-version: 8
 
-      - run: dotnet tool update -g docfx
       - run: dotnet build -c Release
+      - run: dotnet tool update -g docfx
       - run: docfx docs/docfx.json
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+      - name: Upload GitHub pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          path: 'docs/_site/'
+          path: ./docs/_site/
 
       - name: Deploy website
         id: deployment
