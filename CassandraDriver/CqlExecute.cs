@@ -106,7 +106,7 @@ internal class CqlExecute
 
         if ((this._parameters?.Parameters.Count ?? 0) > 0)
         {
-            size += sizeof(int);
+            size += sizeof(short);
             size += this._parameters!.SizeOf();
         }
 

@@ -11,7 +11,6 @@ internal sealed class CqlStringMap : Dictionary<CqlString, CqlString>, ICqlSeria
     public void Serialize(ArrayPoolBufferWriter<byte> writer)
     {
         ArgumentOutOfRangeException.ThrowIfGreaterThan(this.Values.Count, short.MaxValue);
-
         writer.WriteShort((short)this.Values.Count);
         foreach ((CqlString key, CqlString value) in this)
         {
