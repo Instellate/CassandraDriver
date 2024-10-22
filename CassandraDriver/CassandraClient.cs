@@ -1,6 +1,8 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,6 +29,7 @@ public class CassandraClient : IDisposable
     /// <summary>
     /// Tells if the node is dead. Used by cassandra pool to ignore certain clients.
     /// </summary>
+    // ReSharper disable once FieldCanBeMadeReadOnly.Global
     internal bool IsDead = false;
 
     internal readonly string Host;
@@ -39,7 +42,7 @@ public class CassandraClient : IDisposable
     /// <summary>
     /// The default namespace that was used when initialising the request
     /// </summary>
-    public string? DefaultKeyspace { get; set; }
+    public string? DefaultKeyspace { get; }
 
     /// <summary>
     /// The default constructor for creating the client
@@ -138,7 +141,45 @@ public class CassandraClient : IDisposable
             throw new CassandraException("Didn't get result opcode");
         }
 
-        return Query.Deserialize(data.Body.Span, data.Warnings, this);
+        return Query.Deserialize(data.Body.Span, data.Warnings);
+    }
+
+    /// <summary>
+    /// Queries a database with already existing columns gotten from prepare or queries before it
+    /// </summary>
+    /// <param name="query">The query to execute</param>
+    /// <param name="columns">The columns that has been acquired</param>
+    /// <param name="objects"></param>
+    /// <returns></returns>
+    /// <exception cref="CassandraException"></exception>
+    public async Task<Query> QueryAsync(string query,
+        IReadOnlyList<Column> columns,
+        params object[] objects)
+    {
+        CqlQuery cqlQuery = new(query, objects, CqlConsistency.One, true);
+        short stream = (short)new Random().Next(0, short.MaxValue);
+        CqlFrame frame = new(
+            stream,
+            CqlOpCode.Query,
+            cqlQuery.SizeOf()
+        );
+
+        ArrayPoolBufferWriter<byte> writer = new(frame.SizeOf() + cqlQuery.SizeOf());
+        frame.Serialize(writer);
+        cqlQuery.Serialize(writer);
+
+
+        TaskCompletionSource<StreamData> completionSource = new();
+        this._streams.TryAdd(stream, completionSource);
+        await this._socket.SendAsync(writer.WrittenMemory);
+        StreamData data = await completionSource.Task;
+
+        if (data.Frame.OpCode != CqlOpCode.Result)
+        {
+            throw new CassandraException("Didn't get result opcode");
+        }
+
+        return Query.Deserialize(data.Body.Span, data.Warnings, columns);
     }
 
     /// <summary>
@@ -212,7 +253,44 @@ public class CassandraClient : IDisposable
             throw new CassandraException("Didn't get result opcode");
         }
 
-        return Query.Deserialize(data.Body.Span, data.Warnings, this);
+        return Query.Deserialize(data.Body.Span, data.Warnings);
+    }
+
+    /// <summary>
+    /// Execute a prepared statement with cached columns
+    /// </summary>
+    /// <param name="id">The id of the prepared statement</param>
+    /// <param name="columns">The cached columns</param>
+    /// <param name="param">Optional parameters passed to the query</param>
+    /// <returns></returns>
+    /// <exception cref="CassandraException"></exception>
+    public async Task<Query> ExecuteAsync(byte[] id,
+        IReadOnlyList<Column> columns,
+        params object[] param)
+    {
+        CqlExecute cqlExecute = new(id, param, CqlConsistency.One, true);
+        short stream = (short)new Random().Next(0, short.MaxValue);
+        CqlFrame frame = new(
+            stream,
+            CqlOpCode.Execute,
+            cqlExecute.SizeOf()
+        );
+
+        ArrayPoolBufferWriter<byte> writer = new(frame.SizeOf() + cqlExecute.SizeOf());
+        frame.Serialize(writer);
+        cqlExecute.Serialize(writer);
+
+        TaskCompletionSource<StreamData> completionSource = new();
+        this._streams.TryAdd(stream, completionSource);
+        await this._socket.SendAsync(writer.WrittenMemory);
+        StreamData data = await completionSource.Task;
+
+        if (data.Frame.OpCode != CqlOpCode.Result)
+        {
+            throw new CassandraException("Didn't get result opcode");
+        }
+
+        return Query.Deserialize(data.Body.Span, data.Warnings, columns);
     }
 
     /// <summary>
@@ -224,6 +302,169 @@ public class CassandraClient : IDisposable
         await this._socket.DisconnectAsync(true);
         this.Connected = false;
         this._tokenSource.TryReset();
+    }
+
+    /// <summary>
+    /// Creates a query with the `CassandraPager`, allows for iterating with pages
+    /// </summary>
+    /// <param name="query"></param>
+    /// <param name="itemsPerPage"></param>
+    /// <param name="param"></param>
+    /// <returns></returns>
+    /// <exception cref="CassandraException"></exception>
+    public async Task<CassandraPager> QueryWithPagesAsync(string query,
+        int itemsPerPage = 1000,
+        params object[] param)
+    {
+        CqlQuery cqlQuery = new(query,
+            param,
+            CqlConsistency.One,
+            false,
+            null,
+            itemsPerPage);
+        short stream = (short)Random.Shared.Next(0, short.MaxValue);
+        CqlFrame frame = new(
+            stream,
+            CqlOpCode.Query,
+            cqlQuery.SizeOf()
+        );
+
+        ArrayPoolBufferWriter<byte> writer = new(frame.SizeOf() + cqlQuery.SizeOf());
+        frame.Serialize(writer);
+        cqlQuery.Serialize(writer);
+
+
+        TaskCompletionSource<StreamData> completionSource = new();
+        this._streams.TryAdd(stream, completionSource);
+        await this._socket.SendAsync(writer.WrittenMemory);
+        StreamData data = await completionSource.Task;
+
+        if (data.Frame.OpCode != CqlOpCode.Result)
+        {
+            throw new CassandraException("Didn't get result opcode");
+        }
+
+        Query queryResult = Query.Deserialize(data.Body.Span, data.Warnings);
+        return new CassandraPager(queryResult.Rows,
+            queryResult.Columns,
+            param,
+            query,
+            this,
+            (((CqlRows)queryResult).Flags & CqlQueryResponseFlags.HasMorePages) != 0,
+            ((CqlRows)queryResult).PagingState!.Bytes!.ToArray(),
+            itemsPerPage);
+    }
+
+    public async Task<CassandraPager> ExecuteWithPagesAsync(byte[] id,
+        int itemsPerPage = 1000,
+        params object[] param)
+    {
+        CqlExecute cqlExecute
+            = new(id, param, CqlConsistency.One, false, null, itemsPerPage);
+        short stream = (short)new Random().Next(0, short.MaxValue);
+        CqlFrame frame = new(
+            stream,
+            CqlOpCode.Execute,
+            cqlExecute.SizeOf()
+        );
+
+        ArrayPoolBufferWriter<byte> writer = new(frame.SizeOf() + cqlExecute.SizeOf());
+        frame.Serialize(writer);
+        cqlExecute.Serialize(writer);
+
+        TaskCompletionSource<StreamData> completionSource = new();
+        this._streams.TryAdd(stream, completionSource);
+        await this._socket.SendAsync(writer.WrittenMemory);
+        StreamData data = await completionSource.Task;
+
+        if (data.Frame.OpCode != CqlOpCode.Result)
+        {
+            throw new CassandraException("Didn't get result opcode");
+        }
+
+        Query query = Query.Deserialize(data.Body.Span, data.Warnings);
+
+        return new CassandraPager(query.Rows,
+            query.Columns,
+            param,
+            id,
+            this,
+            (((CqlRows)query).Flags & CqlQueryResponseFlags.HasMorePages) != 0,
+            ((CqlRows)query).PagingState?.Bytes?.ToArray(),
+            itemsPerPage);
+    }
+
+    internal async ValueTask<Query> QueryWithPagingStateAsync(string query,
+        object[] objects,
+        byte[] pagingState,
+        IReadOnlyList<Column> columns,
+        int itemsPerPages)
+    {
+        CqlQuery cqlQuery = new(query,
+            objects,
+            CqlConsistency.One,
+            true,
+            pagingState,
+            itemsPerPages);
+        short stream = (short)new Random().Next(0, short.MaxValue);
+        CqlFrame frame = new(
+            stream,
+            CqlOpCode.Query,
+            cqlQuery.SizeOf()
+        );
+
+        ArrayPoolBufferWriter<byte> writer = new(frame.SizeOf() + cqlQuery.SizeOf());
+        frame.Serialize(writer);
+        cqlQuery.Serialize(writer);
+
+        TaskCompletionSource<StreamData> completionSource = new();
+        this._streams.TryAdd(stream, completionSource);
+        await this._socket.SendAsync(writer.WrittenMemory);
+        StreamData data = await completionSource.Task;
+
+        if (data.Frame.OpCode != CqlOpCode.Result)
+        {
+            throw new CassandraException("Didn't get result opcode");
+        }
+
+        return Query.Deserialize(data.Body.Span, data.Warnings, columns);
+    }
+
+    internal async Task<Query> ExecuteWithPagingAsync(byte[] id,
+        object[] objects,
+        byte[] pagingState,
+        IReadOnlyList<Column> columns,
+        int itemsPerPages)
+    {
+        CqlExecute cqlExecute = new(id,
+            objects,
+            CqlConsistency.One,
+            true,
+            pagingState,
+            itemsPerPages);
+
+        short stream = (short)new Random().Next(0, short.MaxValue);
+        CqlFrame frame = new(
+            stream,
+            CqlOpCode.Execute,
+            cqlExecute.SizeOf()
+        );
+
+        ArrayPoolBufferWriter<byte> writer = new(frame.SizeOf() + cqlExecute.SizeOf());
+        frame.Serialize(writer);
+        cqlExecute.Serialize(writer);
+
+        TaskCompletionSource<StreamData> completionSource = new();
+        this._streams.TryAdd(stream, completionSource);
+        await this._socket.SendAsync(writer.WrittenMemory);
+        StreamData data = await completionSource.Task;
+
+        if (data.Frame.OpCode != CqlOpCode.Result)
+        {
+            throw new CassandraException("Didn't get result opcode");
+        }
+
+        return Query.Deserialize(data.Body.Span, data.Warnings, columns);
     }
 
     /// <summary>

@@ -133,7 +133,7 @@ public class CassandraPool : IDisposable
             id = newPrepared.Id;
         }
 
-        return await node.ExecuteAsync(id, param);
+        return await node.ExecuteAsync(id, prepared.Columns, param);
     }
 
     /// <summary>

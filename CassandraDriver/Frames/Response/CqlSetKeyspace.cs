@@ -14,6 +14,9 @@ internal class CqlSetKeyspace : Query
     public override IReadOnlyList<Row> Rows =>
         throw new CassandraException("Set keyspace does not implement rows");
 
+    public override IReadOnlyList<Column> Columns =>
+        throw new CassandraException("Set keyspace does not implement rows");
+
     public override Row this[int index] =>
         throw new CassandraException("Cannot index on query type \"Set keyspace\"");
 

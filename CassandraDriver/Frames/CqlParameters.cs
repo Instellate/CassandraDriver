@@ -10,7 +10,7 @@ internal class CqlParameters : ICqlSerializable
 
     public List<KeyValuePair<CqlString?, CqlValue>> Parameters { get; set; }
 
-    public CqlParameters(object[] objects)
+    public CqlParameters(object?[] objects)
     {
         this.Parameters
             = new List<KeyValuePair<CqlString?, CqlValue>>(objects.Length);

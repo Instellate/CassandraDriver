@@ -13,7 +13,7 @@ internal static class ArrayPoolBufferWriterExtensions
 
     public static void WriteInt(this ArrayPoolBufferWriter<byte> writer, int num)
     {
-        BinaryPrimitives.WriteInt32BigEndian(writer.GetSpan(sizeof(short)), num);
+        BinaryPrimitives.WriteInt32BigEndian(writer.GetSpan(sizeof(int)), num);
         writer.Advance(sizeof(int));
     }
 }

@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="SqlDialectMappings">
-    <file url="file://$PROJECT_DIR$/CassandraDriver.Tests/ClientTests.cs" dialect="CassandraQL" />
-    <file url="file://$PROJECT_DIR$/CassandraDriver.Tests/test_data.cql" dialect="CassandraQL" />
     <file url="PROJECT" dialect="CassandraQL" />
   </component>
 </project>
