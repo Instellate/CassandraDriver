@@ -134,4 +134,36 @@ public class ClientTests
         Assert.That(houses["Riksgatan 1, 100 12 Stockholm"],
             Is.EqualTo("The Swedish Parliament House"));
     }
+
+    [Test]
+    public async Task TestQueryWithPagesAsync()
+    {
+        CassandraPager pager
+            = await this._client.QueryWithPagesAsync("SELECT * FROM person", 1);
+
+        int count = 0;
+        await foreach (Row _ in pager)
+        {
+            count++;
+        }
+
+        Assert.That(count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task TestExecuteWithPagesAsync()
+    {
+        Prepared prepared
+            = await this._client.PrepareAsync("SELECT * FROM person");
+
+        CassandraPager pager = await this._client.ExecuteWithPagesAsync(prepared.Id, 1);
+
+        int count = 0;
+        await foreach (Row _ in pager)
+        {
+            count++;
+        }
+
+        Assert.That(count, Is.EqualTo(2));
+    }
 }

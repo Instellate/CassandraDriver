@@ -26,6 +26,11 @@ public abstract class Query : IEnumerable<Row>
     public abstract IReadOnlyList<Row> Rows { get; }
 
     /// <summary>
+    /// The columns returned by a row query
+    /// </summary>
+    public abstract IReadOnlyList<Column> Columns { get; }
+
+    /// <summary>
     /// THe set keyspace for the query
     /// </summary>
     public string SetKeyspace { get; internal init; } = null!;
@@ -48,7 +53,7 @@ public abstract class Query : IEnumerable<Row>
 
     internal static Query Deserialize(ReadOnlySpan<byte> bytes,
         CqlStringList? warnings,
-        CassandraClient clientRef)
+        IReadOnlyList<Column>? cachedColumns = null)
     {
         QueryKind kind = (QueryKind)BinaryPrimitives.ReadInt32BigEndian(bytes);
         bytes = bytes[sizeof(QueryKind)..];
@@ -60,7 +65,7 @@ public abstract class Query : IEnumerable<Row>
                 query = CqlVoid.Instance;
                 break;
             case QueryKind.Rows:
-                query = CqlRows.Deserialize(ref bytes, clientRef);
+                query = CqlRows.Deserialize(ref bytes, cachedColumns);
                 break;
             case QueryKind.SetKeyspace:
                 query = CqlSetKeyspace.Deserialize(ref bytes);

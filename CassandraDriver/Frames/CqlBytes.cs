@@ -1,8 +1,7 @@
 using System;
 using System.Buffers;
 using System.Buffers.Binary;
-using System.Collections.Generic;
-using CommunityToolkit.HighPerformance;
+using System.Linq;
 using CommunityToolkit.HighPerformance.Buffers;
 
 namespace CassandraDriver.Frames;
@@ -19,12 +18,12 @@ internal class CqlBytes : ICqlSerializable
             }
             else
             {
-                return this.Bytes.Count;
+                return this.Bytes.Length;
             }
         }
     }
 
-    public List<byte>? Bytes { get; set; }
+    public byte[]? Bytes { get; set; }
 
 
     public void Serialize(ArrayPoolBufferWriter<byte> writer)
@@ -32,7 +31,7 @@ internal class CqlBytes : ICqlSerializable
         writer.WriteInt(this.Length);
         if (this.Bytes is not null)
         {
-            writer.Write(this.Bytes.AsSpan());
+            writer.Write(this.Bytes.ToArray());
         }
     }
 
@@ -40,20 +39,18 @@ internal class CqlBytes : ICqlSerializable
     {
         int length = BinaryPrimitives.ReadInt32BigEndian(bytes);
         bytes = bytes[sizeof(int)..];
+        if (length <= -1)
+        {
+            return new CqlBytes();
+        }
 
         CqlBytes cqlBytes = new()
         {
-            Bytes = new List<byte>(length)
+            Bytes = bytes[..length].ToArray()
         };
-
-        for (int i = 0; i < length; i++)
-        {
-            cqlBytes.Bytes.Add(bytes[i]);
-        }
-
         bytes = bytes[length..];
         return cqlBytes;
     }
 
-    public int SizeOf() => sizeof(int) + this.Bytes?.Count ?? 0;
+    public int SizeOf() => sizeof(int) + this.Bytes?.Length ?? 0;
 }

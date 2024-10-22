@@ -7,34 +7,36 @@ namespace CassandraDriver.Frames.Response;
 
 internal class CqlRows : Query
 {
-    private readonly CqlQueryResponseFlags _flags;
     private readonly CqlGlobalTableSpec? _globalTableSpec;
-    private readonly CqlBytes? _pagingState;
     private readonly IReadOnlyList<Row> _rows;
+    private readonly IReadOnlyList<Column> _columns;
 
     // This is here for later when paging is going to be implemented
-    private readonly CassandraClient _client;
+    internal readonly CqlQueryResponseFlags Flags;
+    internal readonly CqlBytes? PagingState;
 
     public override IReadOnlyList<Row> Rows => this._rows;
+    public override IReadOnlyList<Column> Columns => this._columns;
+
 
     public CqlRows(IReadOnlyList<Row> rows,
         CqlQueryResponseFlags flags,
         CqlGlobalTableSpec? globalTableSpec,
         CqlBytes? pagingState,
-        CassandraClient client)
+        IReadOnlyList<Column> columns)
     {
         this._rows = rows;
-        this._flags = flags;
+        this.Flags = flags;
         this._globalTableSpec = globalTableSpec;
-        this._pagingState = pagingState;
-        this._client = client;
+        this.PagingState = pagingState;
+        this._columns = columns;
     }
 
     public override Row this[int index] => this.Rows[index];
     public override int Count => this.Rows.Count;
 
     public static Query Deserialize(ref ReadOnlySpan<byte> bytes,
-        CassandraClient clientRef)
+        IReadOnlyList<Column>? cachedColumns)
     {
         CqlQueryResponseFlags flags =
             (CqlQueryResponseFlags)BinaryPrimitives.ReadInt32BigEndian(bytes);
@@ -55,20 +57,28 @@ internal class CqlRows : Query
             spec = CqlGlobalTableSpec.Deserialize(ref bytes);
         }
 
+        IReadOnlyList<Column> columns;
         if ((flags & CqlQueryResponseFlags.NoMetadata) != 0)
         {
-            throw new CassandraException("What? How? You are not suppose to do this!!");
+            columns = cachedColumns ??
+                      throw new CassandraException(
+                          "Got no cached columns and no metadata");
+        }
+        else
+        {
+            List<Column> newColumns = new(columnCount);
+            for (int i = 0; i < columnCount; i++)
+            {
+                newColumns.Add(Column.Deserialize(
+                        ref bytes,
+                        (flags & CqlQueryResponseFlags.GlobalTableSpec) == 0
+                    )
+                );
+            }
+
+            columns = newColumns;
         }
 
-        List<Column> columns = new(columnCount);
-        for (int i = 0; i < columnCount; i++)
-        {
-            columns.Add(Column.Deserialize(
-                    ref bytes,
-                    (flags & CqlQueryResponseFlags.GlobalTableSpec) == 0
-                )
-            );
-        }
 
         int rowsCount = BinaryPrimitives.ReadInt32BigEndian(bytes);
         bytes = bytes[sizeof(int)..];
@@ -79,6 +89,6 @@ internal class CqlRows : Query
             rows.Add(Row.Deserialize(ref bytes, columns));
         }
 
-        return new CqlRows(rows, flags, spec, pagingState, clientRef);
+        return new CqlRows(rows, flags, spec, pagingState, columns);
     }
 }

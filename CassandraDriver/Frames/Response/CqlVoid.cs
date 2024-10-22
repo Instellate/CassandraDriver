@@ -11,6 +11,9 @@ internal class CqlVoid : Query
     public override IReadOnlyList<Row> Rows =>
         throw new CassandraException("Void does not implement rows");
 
+    public override IReadOnlyList<Column> Columns =>
+        throw new CassandraException("Void does not implement rows");
+
     internal CqlVoid()
     {
         this.Kind = QueryKind.Void;
