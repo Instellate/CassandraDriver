@@ -30,7 +30,7 @@ public class ClientTests
     [Test]
     public async Task TestQueryingAsync()
     {
-        BaseStatement statement = BaseStatement
+        Statement statement = Statement
             .WithQuery(
                 "SELECT name, user_id, created_at, ip_addr FROM person WHERE name = ?")
             .WithParameters("Instellate")
@@ -57,7 +57,7 @@ public class ClientTests
             Is.EqualTo(IPAddress.Parse("178.163.120.7"))
         );
 
-        BaseStatement warningStatement = BaseStatement
+        Statement warningStatement = Statement
             .WithQuery(
                 "SELECT name, user_id, created_at, ip_addr FROM person WHERE user_id = ?")
             .WithParameters(1)
@@ -106,7 +106,7 @@ public class ClientTests
         Assert.That(prepared.BindMarkers[0].Name, Is.EqualTo("name"));
         Assert.That(prepared.BindMarkers[0].PartitionKeyIndex, Is.EqualTo(0));
 
-        BaseStatement statement = BaseStatement
+        Statement statement = Statement
             .WithPreparedId(prepared.Id)
             .WithParameters("Instellate")
             .Build();
@@ -117,7 +117,7 @@ public class ClientTests
     [Test]
     public async Task TestUdtAsync()
     {
-        BaseStatement statement = BaseStatement
+        Statement statement = Statement
             .WithQuery("SELECT friends FROM person WHERE name = ?")
             .WithParameters("Instellate")
             .Build();
@@ -139,7 +139,7 @@ public class ClientTests
     [Test]
     public async Task TestMapAsync()
     {
-        BaseStatement statement = BaseStatement
+        Statement statement = Statement
             .WithQuery("SELECT houses FROM person WHERE name = ?")
             .WithParameters("Instellate")
             .Build();
@@ -158,7 +158,7 @@ public class ClientTests
     [Test]
     public async Task TestQueryWithPagesAsync()
     {
-        BaseStatement statement = BaseStatement
+        Statement statement = Statement
             .WithQuery("SELECT * FROM person")
             .WithItemsPerPage(1)
             .Build();
@@ -181,7 +181,7 @@ public class ClientTests
         Prepared prepared
             = await this._client.PrepareAsync("SELECT * FROM person");
 
-        BaseStatement statement = BaseStatement
+        Statement statement = Statement
             .WithPreparedId(prepared.Id)
             .WithItemsPerPage(1)
             .Build();

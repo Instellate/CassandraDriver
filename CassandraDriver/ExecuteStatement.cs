@@ -6,7 +6,7 @@ namespace CassandraDriver;
 /// <summary>
 /// For execute statements
 /// </summary>
-public sealed class ExecuteStatement : BaseStatement
+public sealed class ExecuteStatement : Statement
 {
     /// <summary>
     /// The prepared ID to be used

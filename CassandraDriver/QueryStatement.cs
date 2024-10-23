@@ -6,7 +6,7 @@ namespace CassandraDriver;
 /// <summary>
 /// A class that represents a statement that will be passed to a query operation
 /// </summary>
-public sealed class QueryStatement : BaseStatement
+public sealed class QueryStatement : Statement
 {
     /// <summary>
     /// Creates a new statement

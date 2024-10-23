@@ -10,9 +10,9 @@ using IntervalTree;
 namespace CassandraDriver;
 
 /// <summary>
-/// A builder used for building a cassandra pool
+/// A builder used for building a <see cref="CassandraCluster"/>
 /// </summary>
-public class CassandraPoolBuilder
+public class CassandraClusterBuilder
 {
     private readonly List<NodeInformation> _nodes = [];
     private readonly HashSet<string> _intervalBlockedKeyspaces = [];
@@ -24,9 +24,9 @@ public class CassandraPoolBuilder
     /// Creates a builder
     /// </summary>
     /// <returns>The builder</returns>
-    public static CassandraPoolBuilder CreateBuilder()
+    public static CassandraClusterBuilder CreateBuilder()
     {
-        return new CassandraPoolBuilder();
+        return new CassandraClusterBuilder();
     }
 
     /// <summary>
@@ -35,7 +35,7 @@ public class CassandraPoolBuilder
     /// <remarks>Usually you only need to add one node and activate <see cref="DiscoverOtherNodes"/> and rest of the nodes will be discovered automatically</remarks>
     /// <param name="information">The information for the node</param>
     /// <returns>The builder</returns>
-    public CassandraPoolBuilder AddNode(NodeInformation information)
+    public CassandraClusterBuilder AddNode(NodeInformation information)
     {
         this._nodes.Add(information);
         return this;
@@ -45,7 +45,7 @@ public class CassandraPoolBuilder
     /// <param name="hostname">The hostname for the node</param>
     /// <param name="port">The port for the node</param>
     /// <returns>The builder</returns>
-    public CassandraPoolBuilder AddNode(string hostname, int port = 9042)
+    public CassandraClusterBuilder AddNode(string hostname, int port = 9042)
     {
         AddNode(new NodeInformation(hostname, port));
         return this;
@@ -56,7 +56,7 @@ public class CassandraPoolBuilder
     /// Requires at least one node
     /// </summary>
     /// <returns>The builder</returns>
-    public CassandraPoolBuilder DiscoverOtherNodes()
+    public CassandraClusterBuilder DiscoverOtherNodes()
     {
         this._discoverNodes = true;
         return this;
@@ -67,7 +67,7 @@ public class CassandraPoolBuilder
     /// </summary>
     /// <param name="keyspace"></param>
     /// <returns>The builder</returns>
-    public CassandraPoolBuilder SetDefaultKeyspace(string keyspace)
+    public CassandraClusterBuilder SetDefaultKeyspace(string keyspace)
     {
         this._defaultKeyspace = keyspace;
         return this;
@@ -78,7 +78,7 @@ public class CassandraPoolBuilder
     /// </summary>
     /// <param name="port">The port to be used by default</param>
     /// <returns>The builder</returns>
-    public CassandraPoolBuilder SetDefaultPort(int port)
+    public CassandraClusterBuilder SetDefaultPort(int port)
     {
         this._defaultPort = port;
         return this;
@@ -94,18 +94,18 @@ public class CassandraPoolBuilder
     /// It is recommended to block keyspace `system`.
     /// </remarks>
     /// <returns>The builder</returns>
-    public CassandraPoolBuilder BlockKeyspace(string keyspace)
+    public CassandraClusterBuilder BlockKeyspace(string keyspace)
     {
         this._intervalBlockedKeyspaces.Add(keyspace);
         return this;
     }
 
     /// <summary>
-    /// Builds the cassandra pool
+    /// Builds a <see cref="CassandraCluster"/>
     /// </summary>
-    /// <returns>A newly created cassandra pool</returns>
+    /// <returns>A newly created <see cref="CassandraCluster"/></returns>
     /// <exception cref="ArgumentOutOfRangeException">There was no node added</exception>
-    public async Task<CassandraPool> BuildAsync()
+    public async Task<CassandraCluster> BuildAsync()
     {
         if (this._nodes.Count <= 0)
         {
@@ -137,7 +137,7 @@ public class CassandraPoolBuilder
         Dictionary<KeyspaceTableHash, IntervalTree<long, CassandraClient>> intervals
             = new();
 
-        BaseStatement tokenRingStatement = BaseStatement
+        Statement tokenRingStatement = Statement
             .WithQuery("SELECT * FROM system.token_ring")
             .Build();
 
@@ -191,7 +191,7 @@ public class CassandraPoolBuilder
             }
         }
 
-        return new CassandraPool(
+        return new CassandraCluster(
             new ConcurrentDictionary<
                 KeyspaceTableHash,
                 IntervalTree<long, CassandraClient>

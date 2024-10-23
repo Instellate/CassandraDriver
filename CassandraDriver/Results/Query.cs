@@ -56,7 +56,7 @@ public abstract class Query : IAsyncEnumerable<Row>
     internal static Query Deserialize(ReadOnlySpan<byte> bytes,
         CqlStringList? warnings,
         CassandraClient client,
-        BaseStatement statement)
+        Statement statement)
     {
         QueryKind kind = (QueryKind)BinaryPrimitives.ReadInt32BigEndian(bytes);
         bytes = bytes[sizeof(QueryKind)..];
