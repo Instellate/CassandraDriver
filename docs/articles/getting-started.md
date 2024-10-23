@@ -53,7 +53,12 @@ So blocking `system` might save some memory and startup time.
 
 Querying using the pool is also pretty simple.
 ```csharp
-Query query = await pool.QueryAsync("SELECT * FROM person WHERE name = ?", name);
+Statement statement = Statement
+    .WithQuery("SELECT * FROM person WHERE name = ?")
+    .WithParameters(name)
+    .Build();
+
+Query query = await pool.QueryAsync(statement);
 ```
 Notice how instead of needing to specify bindings, it does it for you.  
 Other libraries require you to configure the whole query before allowing querying, we try to keep it simple.
@@ -80,6 +85,7 @@ public partial class UserModel
     public required int UserId { get; init; }
 }
 
+// Strings implicitly gets converted to `Statement`
 List<UserModel> users = await pool.QueryAsync<UserModel>("SELECT * FROM person");
 foreach (UserModel user in users) 
 {

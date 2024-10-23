@@ -156,14 +156,15 @@ public class CassandraCluster : IDisposable
     /// <summary>
     /// Query the database and converts it into a deserializable object. For more info <see cref="QueryAsync"/>
     /// </summary>
-    /// <param name="query"></param>
-    /// <param name="param"></param>
+    /// <param name="statement"></param>
+    /// <param name="ct"></param>
     /// <typeparam name="T">The deserializable object used</typeparam>
     /// <returns>A list of T</returns>
-    public async Task<List<T>> QueryAsync<T>(string query, params object[] param)
+    public async Task<List<T>> QueryAsync<T>(Statement statement,
+        CancellationToken ct = default)
         where T : ICqlDeserializable<T>
     {
-        Query result = await this.QueryAsync(query);
+        Query result = await this.QueryAsync(statement, ct);
 
         List<T> list = new(result.Count);
         foreach (Row row in result.LocalRows)
