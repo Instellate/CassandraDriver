@@ -50,7 +50,7 @@ public sealed class StatementBuilder
     /// Builds a Statement from the values provided to the statement builder
     /// </summary>
     /// <returns>A newly created statement</returns>
-    public BaseStatement Build()
+    public Statement Build()
     {
         if (this.Query is not null)
         {

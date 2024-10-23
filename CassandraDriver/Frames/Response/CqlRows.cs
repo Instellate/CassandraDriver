@@ -12,7 +12,7 @@ internal class CqlRows : Query
     private readonly List<Row> _rows;
     private readonly IReadOnlyList<Column> _columns;
     private readonly CassandraClient _client;
-    private readonly BaseStatement _statement;
+    private readonly Statement _statement;
 
     // This is here for later when paging is going to be implemented
     private readonly CqlQueryResponseFlags _flags;
@@ -29,7 +29,7 @@ internal class CqlRows : Query
         CqlBytes? pagingState,
         IReadOnlyList<Column> columns,
         CassandraClient client,
-        BaseStatement statement)
+        Statement statement)
     {
         this._rows = rows;
         this._flags = flags;
@@ -71,7 +71,7 @@ internal class CqlRows : Query
 
     public static Query Deserialize(ref ReadOnlySpan<byte> bytes,
         CassandraClient client,
-        BaseStatement statement)
+        Statement statement)
     {
         CqlQueryResponseFlags flags =
             (CqlQueryResponseFlags)BinaryPrimitives.ReadInt32BigEndian(bytes);

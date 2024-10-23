@@ -25,7 +25,7 @@ public class CassandraClient : IDisposable
         _streams = new();
 
     /// <summary>
-    /// Tells if the node is dead. Used by cassandra pool to ignore certain clients.
+    /// Tells if the node is dead. Used by <see cref="CassandraCluster"/> to ignore certain clients.
     /// </summary>
     // ReSharper disable once FieldCanBeMadeReadOnly.Global
     internal bool IsDead = false;
@@ -103,7 +103,7 @@ public class CassandraClient : IDisposable
         _ = HandleReadingAsync(this._tokenSource.Token);
         if (this.DefaultKeyspace is not null)
         {
-            BaseStatement statement = BaseStatement
+            Statement statement = Statement
                 .WithQuery("USE " + this.DefaultKeyspace)
                 .Build();
 
@@ -118,7 +118,7 @@ public class CassandraClient : IDisposable
     /// <param name="ct"></param>
     /// <returns></returns>
     /// <exception cref="CassandraException"></exception>
-    public async Task<Query> QueryAsync(BaseStatement statement,
+    public async Task<Query> QueryAsync(Statement statement,
         CancellationToken ct = default)
     {
         if (statement is ExecuteStatement)
@@ -206,7 +206,7 @@ public class CassandraClient : IDisposable
     /// <returns>The result of the database</returns>
     /// <exception cref="CassandraException"></exception>
     public async Task<Query> ExecuteAsync(
-        BaseStatement statement,
+        Statement statement,
         CancellationToken ct = default)
     {
         if (statement is QueryStatement)

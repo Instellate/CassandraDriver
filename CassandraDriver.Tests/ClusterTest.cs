@@ -3,37 +3,40 @@ using CassandraDriver.Results;
 
 namespace CassandraDriver.Tests;
 
-public class PoolTest
+public class ClusterTest
 {
-    private CassandraPool _pool;
+    private CassandraCluster _cluster;
 
     [OneTimeSetUp]
     public async Task SetupAsync()
     {
-        CassandraPoolBuilder builder = CassandraPoolBuilder
+        CassandraClusterBuilder builder = CassandraClusterBuilder
             .CreateBuilder()
             .AddNode("172.42.0.2")
             .DiscoverOtherNodes()
             .BlockKeyspace("system")
             .BlockKeyspace("system_auth")
             .SetDefaultKeyspace("csharpdriver");
-        this._pool = await builder.BuildAsync();
+        this._cluster = await builder.BuildAsync();
     }
 
     [OneTimeTearDown]
     public async Task TearDownAsync()
     {
-        await this._pool.DisconnectAsync();
+        await this._cluster.DisconnectAsync();
     }
 
     [Test]
-    public async Task BuildPoolAsync()
+    public async Task BuildClusterAsync()
     {
-        Assert.That(this._pool.NodeCount, Is.EqualTo(3));
+        Assert.That(this._cluster.NodeCount, Is.EqualTo(3));
 
-        Query query =
-            await this._pool.QueryAsync("SELECT * FROM person WHERE name = ?",
-                "Instellate");
+        Statement state = Statement
+            .WithQuery("SELECT * FROM person WHERE name = ?")
+            .WithParameters("Instellate")
+            .Build();
+
+        Query query = await this._cluster.QueryAsync(state);
         Assert.That(query.Count, Is.EqualTo(1));
 
         Assert.IsInstanceOf<string>(query[0]["name"]);

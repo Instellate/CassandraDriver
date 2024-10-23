@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using CassandraDriver.Frames;
 using CassandraDriver.Results;
@@ -9,23 +10,23 @@ using IntervalTree;
 namespace CassandraDriver;
 
 /// <summary>
-/// Represent a pool of nodes, stores prepared statements for each node and also calculates which node a statement should go to
+/// Represent a cluster of nodes, stores prepared statements for each node and also calculates which node a statement should go to
 /// </summary>
-public class CassandraPool : IDisposable
+public class CassandraCluster : IDisposable
 {
     private readonly
         ConcurrentDictionary<KeyspaceTableHash, IntervalTree<long, CassandraClient>>
         _intervals;
 
     private readonly IReadOnlyList<CassandraClient> _nodes;
-    private readonly ConcurrentDictionary<string, PoolPrepared> _prepareds = [];
+    private readonly ConcurrentDictionary<string, ClusterPrepared> _prepareds = [];
 
     /// <summary>
     /// The amount of nodes that was found
     /// </summary>
     public int NodeCount => this._nodes.Count;
 
-    internal CassandraPool(
+    internal CassandraCluster(
         ConcurrentDictionary<KeyspaceTableHash, IntervalTree<long, CassandraClient>>
             intervals,
         IReadOnlyList<CassandraClient> nodes)
@@ -35,15 +36,24 @@ public class CassandraPool : IDisposable
     }
 
     /// <summary>
-    /// Query the pool. Querying will automatically prepare all statements if they don't exist, and execute it. It will also find the right place to query on and handles dead nodes.
+    /// Query the <see cref="CassandraCluster"/>. Querying will automatically prepare all statements if they don't exist, and execute it. It will also find the right place to query on and handles dead nodes.
     /// </summary>
     /// <param name="query">The query used when querying</param>
-    /// <param name="param">Parameters provided</param>
+    /// <param name="ct"></param>
     /// <returns>The result from the database</returns>
     /// <exception cref="CassandraException"></exception>
-    public async Task<Query> QueryAsync(string query, params object?[] param)
+    public async Task<Query> QueryAsync(Statement query,
+        CancellationToken ct = default)
     {
-        if (!this._prepareds.TryGetValue(query, out PoolPrepared? prepared))
+        if (query is ExecuteStatement)
+        {
+            throw new CassandraException("Statement cannot be execute statement");
+        }
+
+        QueryStatement queryStatement = (QueryStatement)query;
+
+        if (!this._prepareds.TryGetValue(queryStatement.Query,
+                out ClusterPrepared? prepared))
         {
             CassandraClient? aliveNode = FindAnyAliveNode();
             if (aliveNode is null)
@@ -51,14 +61,15 @@ public class CassandraPool : IDisposable
                 throw new CassandraException("Could not find an alive node.");
             }
 
-            prepared = new PoolPrepared(await aliveNode.PrepareAsync(query));
+            prepared = new ClusterPrepared(
+                await aliveNode.PrepareAsync(queryStatement.Query));
             prepared.NodeIds.TryAdd(aliveNode.Host, prepared.Id);
-            this._prepareds.TryAdd(query, prepared);
+            this._prepareds.TryAdd(queryStatement.Query, prepared);
         }
 
         ArgumentOutOfRangeException.ThrowIfNotEqual(
             prepared.BindMarkers.Count,
-            param.Length,
+            queryStatement.Parameters?.Length ?? 0,
             "param"
         );
 
@@ -71,7 +82,7 @@ public class CassandraPool : IDisposable
             }
 
             Type type = Row.DataTypeTypes[bindMarker.Type];
-            if (param[i]?.GetType() != type)
+            if (queryStatement.Parameters?[i]?.GetType() != type)
             {
                 throw new CassandraException(
                     $"Parameter {i} does not match expected type {type}"
@@ -91,7 +102,7 @@ public class CassandraPool : IDisposable
         CassandraClient? node = null;
         if (findIndex > -1)
         {
-            object? value = param[findIndex];
+            object? value = queryStatement.Parameters?[findIndex];
             long murmur3Hash = CassandraMurmur3Hash.CalculatePrimaryKey(
                 CqlValue.CreateCqlValue(value).Bytes
             );
@@ -127,18 +138,19 @@ public class CassandraPool : IDisposable
 
         if (!prepared.NodeIds.TryGetValue(node.Host, out byte[]? id))
         {
-            Prepared newPrepared = await node.PrepareAsync(query);
+            Prepared newPrepared = await node.PrepareAsync(queryStatement.Query);
             prepared.NodeIds.TryAdd(node.Host, newPrepared.Id);
             id = newPrepared.Id;
         }
 
-        BaseStatement statement = BaseStatement
+        Statement statement = Statement
             .WithPreparedId(id)
             .WithColumns(prepared.Columns)
-            .WithParameters(param)
+            .WithParameters(queryStatement.Parameters)
+            .WithItemsPerPage(queryStatement.ItemsPerPage)
             .Build();
 
-        return await node.ExecuteAsync(statement);
+        return await node.ExecuteAsync(statement, ct);
     }
 
     /// <summary>
@@ -200,7 +212,7 @@ public class CassandraPool : IDisposable
     }
 
     /// <summary>
-    /// Disconnects all nodes in the pool
+    /// Disconnects all nodes in the <see cref="CassandraCluster"/>
     /// </summary>
     public async Task DisconnectAsync()
     {
@@ -214,7 +226,7 @@ public class CassandraPool : IDisposable
     }
 
     /// <summary>
-    /// Dispose the pool
+    /// Dispose the <see cref="CassandraCluster"/>
     /// </summary>
     public void Dispose()
     {

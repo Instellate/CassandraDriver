@@ -6,7 +6,7 @@ namespace CassandraDriver;
 /// <summary>
 /// A class that represents a statement that will be passed to a query operation
 /// </summary>
-public abstract class BaseStatement
+public abstract class Statement
 {
     /// <summary>
     /// Creates a new statement
@@ -16,7 +16,7 @@ public abstract class BaseStatement
     /// <param name="itemsPerPage">The items per page limit</param>
     /// <param name="columns">Pre cached columns if there are any</param>
     /// <param name="parameters">Parameters to bind</param>
-    protected BaseStatement(
+    protected Statement(
         byte[]? pagingState = null,
         int itemsPerPage = 5000,
         IReadOnlyList<Column>? columns = null,
@@ -69,6 +69,5 @@ public abstract class BaseStatement
     /// </summary>
     /// <param name="query"></param>
     /// <returns></returns>
-    public static implicit operator BaseStatement(string query) =>
-        WithQuery(query).Build();
+    public static implicit operator Statement(string query) => WithQuery(query).Build();
 }
