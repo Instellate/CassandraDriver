@@ -15,6 +15,7 @@ public class PoolTest
             .AddNode("172.42.0.2")
             .DiscoverOtherNodes()
             .BlockKeyspace("system")
+            .BlockKeyspace("system_auth")
             .SetDefaultKeyspace("csharpdriver");
         this._pool = await builder.BuildAsync();
     }

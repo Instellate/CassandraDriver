@@ -136,8 +136,13 @@ public class CassandraPoolBuilder
         CassandraClient helpNode = constructedNodes.First().Value;
         Dictionary<KeyspaceTableHash, IntervalTree<long, CassandraClient>> intervals
             = new();
-        Query tokenRanges = await helpNode.QueryAsync("SELECT * FROM system.token_ring");
-        foreach (Row row in tokenRanges.Rows)
+
+        BaseStatement tokenRingStatement = BaseStatement
+            .WithQuery("SELECT * FROM system.token_ring")
+            .Build();
+
+        Query tokenRanges = await helpNode.QueryAsync(tokenRingStatement);
+        await foreach (Row row in tokenRanges)
         {
             string keyspace = (string)row["keyspace_name"]!;
             if (this._intervalBlockedKeyspaces.Contains(keyspace))
@@ -201,7 +206,7 @@ public class CassandraPoolBuilder
         Query query = await client.QueryAsync("SELECT rpc_address FROM system.peers");
         nodes.EnsureCapacity(query.Count - nodes.Count);
 
-        foreach (Row row in query.Rows)
+        await foreach (Row row in query)
         {
             IPAddress rpcAddress = (IPAddress)row["rpc_address"]!;
             if (nodes.ContainsKey(rpcAddress.ToString()))

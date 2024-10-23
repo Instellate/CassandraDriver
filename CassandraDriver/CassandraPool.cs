@@ -41,7 +41,7 @@ public class CassandraPool : IDisposable
     /// <param name="param">Parameters provided</param>
     /// <returns>The result from the database</returns>
     /// <exception cref="CassandraException"></exception>
-    public async Task<Query> QueryAsync(string query, params object[] param)
+    public async Task<Query> QueryAsync(string query, params object?[] param)
     {
         if (!this._prepareds.TryGetValue(query, out PoolPrepared? prepared))
         {
@@ -71,7 +71,7 @@ public class CassandraPool : IDisposable
             }
 
             Type type = Row.DataTypeTypes[bindMarker.Type];
-            if (param[i].GetType() != type)
+            if (param[i]?.GetType() != type)
             {
                 throw new CassandraException(
                     $"Parameter {i} does not match expected type {type}"
@@ -91,7 +91,7 @@ public class CassandraPool : IDisposable
         CassandraClient? node = null;
         if (findIndex > -1)
         {
-            object value = param[findIndex];
+            object? value = param[findIndex];
             long murmur3Hash = CassandraMurmur3Hash.CalculatePrimaryKey(
                 CqlValue.CreateCqlValue(value).Bytes
             );
@@ -101,8 +101,7 @@ public class CassandraPool : IDisposable
                 prepared.Columns[0].Table!
             );
 
-            IntervalTree<long, CassandraClient> interval
-                = this._intervals.GetValueOrDefault(hash)!;
+            IntervalTree<long, CassandraClient> interval = GetIntervalTree(hash);
 
             IEnumerable<CassandraClient> possibleNodes = interval.Query(murmur3Hash);
             foreach (CassandraClient possibleNode in possibleNodes)
@@ -133,7 +132,13 @@ public class CassandraPool : IDisposable
             id = newPrepared.Id;
         }
 
-        return await node.ExecuteAsync(id, prepared.Columns, param);
+        BaseStatement statement = BaseStatement
+            .WithPreparedId(id)
+            .WithColumns(prepared.Columns)
+            .WithParameters(param)
+            .Build();
+
+        return await node.ExecuteAsync(statement);
     }
 
     /// <summary>
@@ -149,7 +154,7 @@ public class CassandraPool : IDisposable
         Query result = await this.QueryAsync(query);
 
         List<T> list = new(result.Count);
-        foreach (Row row in result.Rows)
+        foreach (Row row in result.LocalRows)
         {
             list.Add(T.DeserializeRow(row));
         }
@@ -170,6 +175,28 @@ public class CassandraPool : IDisposable
         }
 
         return node;
+    }
+
+    private IntervalTree<long, CassandraClient> GetIntervalTree(KeyspaceTableHash hash)
+    {
+        if (this._intervals.TryGetValue(hash,
+                out IntervalTree<long, CassandraClient>? interval))
+        {
+            return interval;
+        }
+        else
+        {
+            KeyspaceTableHash newHash = new(hash.Keyspace, "<ALL>");
+            if (this._intervals.TryGetValue(newHash,
+                    out IntervalTree<long, CassandraClient>? tree))
+            {
+                return tree;
+            }
+            else
+            {
+                throw new CassandraException("Couldn't find a interval");
+            }
+        }
     }
 
     /// <summary>

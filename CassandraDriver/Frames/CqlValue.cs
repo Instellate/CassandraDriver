@@ -8,21 +8,33 @@ namespace CassandraDriver.Frames;
 
 internal struct CqlValue : ICqlSerializable
 {
-    internal readonly byte[] Bytes;
+    internal readonly byte[]? Bytes;
 
-    public CqlValue(byte[] bytes)
+    public CqlValue(byte[]? bytes)
     {
         this.Bytes = bytes;
     }
 
     public void Serialize(ArrayPoolBufferWriter<byte> writer)
     {
-        writer.WriteInt(this.Bytes.Length);
-        writer.Write(this.Bytes);
+        if (Bytes is null)
+        {
+            writer.WriteInt(-1);
+        }
+        else
+        {
+            writer.WriteInt(this.Bytes.Length);
+            writer.Write(this.Bytes);
+        }
     }
 
-    public static CqlValue CreateCqlValue(object value)
+    public static CqlValue CreateCqlValue(object? value)
     {
+        if (value is null)
+        {
+            return new CqlValue(null);
+        }
+
         byte[] bytes;
         switch (value)
         {
@@ -71,5 +83,5 @@ internal struct CqlValue : ICqlSerializable
         }
     }
 
-    public int SizeOf() => sizeof(int) + this.Bytes.Length;
+    public int SizeOf() => sizeof(int) + this.Bytes?.Length ?? 0;
 }

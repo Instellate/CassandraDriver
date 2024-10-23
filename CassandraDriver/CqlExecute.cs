@@ -17,7 +17,7 @@ internal class CqlExecute
     private readonly int? _itemsPerPages;
 
     public CqlExecute(byte[] id,
-        object[] objects,
+        object?[]? objects,
         CqlConsistency consistency,
         bool skipMetadata = false,
         byte[]? pagingState = null,
@@ -46,7 +46,7 @@ internal class CqlExecute
             this._flags |= CqlQueryFlags.PageSize;
         }
 
-        if (objects.Length <= 0)
+        if (objects is null || objects.Length <= 0)
         {
             return;
         }

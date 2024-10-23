@@ -60,7 +60,7 @@ public class Murmur3Tests
                 "SELECT token(name) AS name_token, name FROM person"
             );
 
-        foreach (Row row in query.Rows)
+        foreach (Row row in query.LocalRows)
         {
             Assert.IsInstanceOf<long>(row["name_token"]);
             Assert.IsInstanceOf<string>(row["name"]);
