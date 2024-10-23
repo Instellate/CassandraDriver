@@ -11,7 +11,6 @@ public abstract class Statement
     /// <summary>
     /// Creates a new statement
     /// </summary>
-    /// <param name="query">The query to be used</param>
     /// <param name="pagingState">The paging state if there is any</param>
     /// <param name="itemsPerPage">The items per page limit</param>
     /// <param name="columns">Pre cached columns if there are any</param>
@@ -48,7 +47,7 @@ public abstract class Statement
     /// <summary>
     /// Parameters to build with
     /// </summary>
-    public object?[]? Parameters { get; } = null;
+    public object?[]? Parameters { get; }
 
     /// <summary>
     /// Creates a <see cref="StatementBuilder"/> with the provided query

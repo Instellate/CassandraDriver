@@ -23,7 +23,7 @@ internal class CqlSetKeyspace : Query
 
     public override int Count => 0;
 
-    public override byte[]? PagingState =>
+    public override byte[] PagingState =>
         throw new CassandraException(
             "Cannot get paging state on query on query type \"Set keyspace\"");
 

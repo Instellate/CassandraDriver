@@ -32,3 +32,12 @@ All values listed here are the ones that is listed by [ScyllaDb](https://opensou
 | varint       | BigInteger     |
 
 <small>*These types have a chance of overflowing</small>
+
+`list<T>` will be given as `List<T>`.   
+`set<T>` will be given as `HashSet<T>`.
+`map<TKey, TValue>` will be given as `Dictionary<TKey, TValue>`.
+
+### Notes
+There is some issues with `list`, `set`, and `map`.   
+With how they are implemented internally right now makes it not possible to deserialize lists in lists, maps in maps, sets in sets.  
+If you are using those this driver will not support those

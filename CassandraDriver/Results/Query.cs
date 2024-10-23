@@ -51,6 +51,9 @@ public abstract class Query : IAsyncEnumerable<Row>
     /// </summary>
     public abstract int Count { get; }
 
+    /// <summary>
+    /// The paging state provided if there is anyh
+    /// </summary>
     public abstract byte[]? PagingState { get; }
 
     internal static Query Deserialize(ReadOnlySpan<byte> bytes,

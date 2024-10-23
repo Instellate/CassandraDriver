@@ -24,7 +24,7 @@ internal class CqlVoid : Query
 
     public override int Count => 0;
 
-    public override byte[]? PagingState =>
+    public override byte[] PagingState =>
         throw new CassandraException("Void does not implement paging state");
 
     public override IAsyncEnumerator<Row>

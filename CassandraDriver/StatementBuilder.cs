@@ -3,13 +3,24 @@ using CassandraDriver.Results;
 
 namespace CassandraDriver;
 
+/// <summary>
+/// A builder to build statements
+/// </summary>
 public sealed class StatementBuilder
 {
+    /// <summary>
+    /// Constructor for constructing <see cref="StatementBuilder"/> with a query
+    /// </summary>
+    /// <param name="query"></param>
     public StatementBuilder(string query)
     {
         this.Query = query;
     }
 
+    /// <summary>
+    /// Construct for constructing <see cref="StatementBuilder"/> with a prepared ID
+    /// </summary>
+    /// <param name="preparedId"></param>
     public StatementBuilder(byte[] preparedId)
     {
         this.PreparedId = preparedId;
@@ -44,7 +55,7 @@ public sealed class StatementBuilder
     /// <summary>
     /// Parameters to build with
     /// </summary>
-    public object?[]? Parameters { get; set; } = null;
+    public object?[]? Parameters { get; set; }
 
     /// <summary>
     /// Builds a Statement from the values provided to the statement builder
