@@ -1,7 +1,6 @@
 using System;
 using System.Buffers;
 using System.Buffers.Binary;
-using System.Linq;
 using CommunityToolkit.HighPerformance.Buffers;
 
 namespace CassandraDriver.Frames;
@@ -31,7 +30,7 @@ internal class CqlBytes : ICqlSerializable
         writer.WriteInt(this.Length);
         if (this.Bytes is not null)
         {
-            writer.Write(this.Bytes.ToArray());
+            writer.Write(this.Bytes);
         }
     }
 
