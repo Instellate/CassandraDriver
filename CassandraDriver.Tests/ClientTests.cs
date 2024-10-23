@@ -10,7 +10,7 @@ public class ClientTests
     [OneTimeSetUp]
     public async Task SetupAsync()
     {
-        this._client = new CassandraClient("172.42.0.2", defaultKeyspace: "csharpdriver");
+        this._client = new CassandraClient("172.42.0.4", defaultKeyspace: "csharpdriver");
         await this._client.ConnectAsync();
     }
 
@@ -30,9 +30,14 @@ public class ClientTests
     [Test]
     public async Task TestQueryingAsync()
     {
+        BaseStatement statement = BaseStatement
+            .WithQuery(
+                "SELECT name, user_id, created_at, ip_addr FROM person WHERE name = ?")
+            .WithParameters("Instellate")
+            .Build();
+
         Query query = await this._client.QueryAsync(
-            "SELECT name, user_id, created_at, ip_addr FROM person WHERE name = ?",
-            "Instellate"
+            statement
         );
         Assert.That(query.Count, Is.EqualTo(1));
 
@@ -52,10 +57,14 @@ public class ClientTests
             Is.EqualTo(IPAddress.Parse("178.163.120.7"))
         );
 
+        BaseStatement warningStatement = BaseStatement
+            .WithQuery(
+                "SELECT name, user_id, created_at, ip_addr FROM person WHERE user_id = ?")
+            .WithParameters(1)
+            .Build();
         Query warningQuery =
-            await this._client.QueryAsync(
-                "SELECT name, user_id, created_at, ip_addr FROM person WHERE user_id = ?",
-                1);
+            await this._client.QueryAsync(warningStatement);
+
         Assert.That(query.Count, Is.EqualTo(1));
 
         Assert.IsInstanceOf<string>(warningQuery[0]["name"]);
@@ -97,15 +106,23 @@ public class ClientTests
         Assert.That(prepared.BindMarkers[0].Name, Is.EqualTo("name"));
         Assert.That(prepared.BindMarkers[0].PartitionKeyIndex, Is.EqualTo(0));
 
-        await this._client.ExecuteAsync(prepared.Id, "Instellate");
+        BaseStatement statement = BaseStatement
+            .WithPreparedId(prepared.Id)
+            .WithParameters("Instellate")
+            .Build();
+
+        await this._client.ExecuteAsync(statement);
     }
 
     [Test]
     public async Task TestUdtAsync()
     {
-        Query query
-            = await this._client.QueryAsync("SELECT friends FROM person WHERE name = ?",
-                "Instellate");
+        BaseStatement statement = BaseStatement
+            .WithQuery("SELECT friends FROM person WHERE name = ?")
+            .WithParameters("Instellate")
+            .Build();
+
+        Query query = await this._client.QueryAsync(statement);
 
         Assert.IsInstanceOf<List<Row>>(query[0]["friends"]);
 
@@ -122,9 +139,12 @@ public class ClientTests
     [Test]
     public async Task TestMapAsync()
     {
-        Query query
-            = await this._client.QueryAsync("SELECT houses FROM person WHERE name = ?",
-                "Instellate");
+        BaseStatement statement = BaseStatement
+            .WithQuery("SELECT houses FROM person WHERE name = ?")
+            .WithParameters("Instellate")
+            .Build();
+
+        Query query = await this._client.QueryAsync(statement);
 
         Row row = query[0];
 
@@ -138,11 +158,16 @@ public class ClientTests
     [Test]
     public async Task TestQueryWithPagesAsync()
     {
-        CassandraPager pager
-            = await this._client.QueryWithPagesAsync("SELECT * FROM person", 1);
+        BaseStatement statement = BaseStatement
+            .WithQuery("SELECT * FROM person")
+            .WithItemsPerPage(1)
+            .Build();
+
+        Query query
+            = await this._client.QueryAsync(statement);
 
         int count = 0;
-        await foreach (Row _ in pager)
+        await foreach (Row _ in query)
         {
             count++;
         }
@@ -156,10 +181,15 @@ public class ClientTests
         Prepared prepared
             = await this._client.PrepareAsync("SELECT * FROM person");
 
-        CassandraPager pager = await this._client.ExecuteWithPagesAsync(prepared.Id, 1);
+        BaseStatement statement = BaseStatement
+            .WithPreparedId(prepared.Id)
+            .WithItemsPerPage(1)
+            .Build();
+
+        Query query = await this._client.ExecuteAsync(statement);
 
         int count = 0;
-        await foreach (Row _ in pager)
+        await foreach (Row _ in query)
         {
             count++;
         }

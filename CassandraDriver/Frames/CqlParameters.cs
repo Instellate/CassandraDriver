@@ -14,7 +14,7 @@ internal class CqlParameters : ICqlSerializable
     {
         this.Parameters
             = new List<KeyValuePair<CqlString?, CqlValue>>(objects.Length);
-        foreach (object value in objects)
+        foreach (object? value in objects)
         {
             this.Parameters.Add(
                 new KeyValuePair<CqlString?, CqlValue>(

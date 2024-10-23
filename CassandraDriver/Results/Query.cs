@@ -1,7 +1,7 @@
 using System;
 using System.Buffers.Binary;
-using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using CassandraDriver.Frames;
 using CassandraDriver.Frames.Response;
 
@@ -11,7 +11,7 @@ namespace CassandraDriver.Results;
 /// The basic class for results, includes queries, prepare, and execute.
 /// Do not inherit and implement it yourself.
 /// </summary>
-public abstract class Query : IEnumerable<Row>
+public abstract class Query : IAsyncEnumerable<Row>
 {
     private List<string>? _warnings;
 
@@ -21,9 +21,9 @@ public abstract class Query : IEnumerable<Row>
     public QueryKind Kind { get; internal init; }
 
     /// <summary>
-    /// The rows for the prepared statement
+    /// The rows for the query result
     /// </summary>
-    public abstract IReadOnlyList<Row> Rows { get; }
+    public abstract IReadOnlyList<Row> LocalRows { get; }
 
     /// <summary>
     /// The columns returned by a row query
@@ -51,9 +51,12 @@ public abstract class Query : IEnumerable<Row>
     /// </summary>
     public abstract int Count { get; }
 
+    public abstract byte[]? PagingState { get; }
+
     internal static Query Deserialize(ReadOnlySpan<byte> bytes,
         CqlStringList? warnings,
-        IReadOnlyList<Column>? cachedColumns = null)
+        CassandraClient client,
+        BaseStatement statement)
     {
         QueryKind kind = (QueryKind)BinaryPrimitives.ReadInt32BigEndian(bytes);
         bytes = bytes[sizeof(QueryKind)..];
@@ -65,7 +68,7 @@ public abstract class Query : IEnumerable<Row>
                 query = CqlVoid.Instance;
                 break;
             case QueryKind.Rows:
-                query = CqlRows.Deserialize(ref bytes, cachedColumns);
+                query = CqlRows.Deserialize(ref bytes, client, statement);
                 break;
             case QueryKind.SetKeyspace:
                 query = CqlSetKeyspace.Deserialize(ref bytes);
@@ -91,10 +94,11 @@ public abstract class Query : IEnumerable<Row>
     }
 
     /// <summary>
-    /// Get's the enumerator for rows
+    /// Get pages for each row async. Fetches a new page transparently.
     /// </summary>
+    /// <remarks>If you are in a sync context and you are sure that there will be no more page fetching you can convert this into a sync enumerable through the extension method</remarks>
+    /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    public IEnumerator<Row> GetEnumerator() => Rows.GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    public abstract IAsyncEnumerator<Row> GetAsyncEnumerator(
+        CancellationToken cancellationToken = default);
 }

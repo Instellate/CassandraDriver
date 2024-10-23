@@ -1,6 +1,7 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Threading;
 using CassandraDriver.Results;
 
 namespace CassandraDriver.Frames.Response;
@@ -8,35 +9,69 @@ namespace CassandraDriver.Frames.Response;
 internal class CqlRows : Query
 {
     private readonly CqlGlobalTableSpec? _globalTableSpec;
-    private readonly IReadOnlyList<Row> _rows;
+    private readonly List<Row> _rows;
     private readonly IReadOnlyList<Column> _columns;
+    private readonly CassandraClient _client;
+    private readonly BaseStatement _statement;
 
     // This is here for later when paging is going to be implemented
-    internal readonly CqlQueryResponseFlags Flags;
-    internal readonly CqlBytes? PagingState;
+    private readonly CqlQueryResponseFlags _flags;
+    private readonly CqlBytes? _pagingState;
 
-    public override IReadOnlyList<Row> Rows => this._rows;
+    public override IReadOnlyList<Row> LocalRows => this._rows;
     public override IReadOnlyList<Column> Columns => this._columns;
 
+    public override byte[]? PagingState => this._pagingState?.Bytes;
 
-    public CqlRows(IReadOnlyList<Row> rows,
+    private CqlRows(List<Row> rows,
         CqlQueryResponseFlags flags,
         CqlGlobalTableSpec? globalTableSpec,
         CqlBytes? pagingState,
-        IReadOnlyList<Column> columns)
+        IReadOnlyList<Column> columns,
+        CassandraClient client,
+        BaseStatement statement)
     {
         this._rows = rows;
-        this.Flags = flags;
+        this._flags = flags;
         this._globalTableSpec = globalTableSpec;
-        this.PagingState = pagingState;
+        this._pagingState = pagingState;
         this._columns = columns;
+        this._client = client;
+        this._statement = statement;
+        this._statement.PagingState = pagingState?.Bytes;
     }
 
-    public override Row this[int index] => this.Rows[index];
-    public override int Count => this.Rows.Count;
+    public override Row this[int index] => this.LocalRows[index];
+    public override int Count => this.LocalRows.Count;
+
+    public override async IAsyncEnumerator<Row> GetAsyncEnumerator(
+        CancellationToken cancellationToken = default)
+    {
+        foreach (Row row in _rows)
+        {
+            yield return row;
+        }
+
+        CqlQueryResponseFlags flags = this._flags;
+        while ((flags & CqlQueryResponseFlags.HasMorePages) != 0)
+        {
+            Query query
+                = await this._client.QueryAsync(this._statement, cancellationToken);
+
+            this._rows.AddRange(query.LocalRows);
+            foreach (Row row in query.LocalRows)
+            {
+                yield return row;
+            }
+
+            this._statement.PagingState = query.PagingState;
+            flags = ((CqlRows)query)._flags;
+        }
+    }
 
     public static Query Deserialize(ref ReadOnlySpan<byte> bytes,
-        IReadOnlyList<Column>? cachedColumns)
+        CassandraClient client,
+        BaseStatement statement)
     {
         CqlQueryResponseFlags flags =
             (CqlQueryResponseFlags)BinaryPrimitives.ReadInt32BigEndian(bytes);
@@ -60,7 +95,7 @@ internal class CqlRows : Query
         IReadOnlyList<Column> columns;
         if ((flags & CqlQueryResponseFlags.NoMetadata) != 0)
         {
-            columns = cachedColumns ??
+            columns = statement.Columns ??
                       throw new CassandraException(
                           "Got no cached columns and no metadata");
         }
@@ -89,6 +124,6 @@ internal class CqlRows : Query
             rows.Add(Row.Deserialize(ref bytes, columns));
         }
 
-        return new CqlRows(rows, flags, spec, pagingState, columns);
+        return new CqlRows(rows, flags, spec, pagingState, columns, client, statement);
     }
 }

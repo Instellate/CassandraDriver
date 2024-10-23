@@ -17,7 +17,7 @@ internal class CqlQuery : ICqlSerializable
     public int? ResultPageSize { get; }
 
     public CqlQuery(CqlLongString query,
-        object[] objects,
+        object?[]? objects,
         CqlConsistency consistency,
         bool skipMetadata = false,
         byte[]? pagingState = null,
@@ -45,7 +45,7 @@ internal class CqlQuery : ICqlSerializable
         }
 
         this.Consistency = consistency;
-        if (objects.Length <= 0)
+        if (objects is null || objects.Length <= 0)
         {
             return;
         }
