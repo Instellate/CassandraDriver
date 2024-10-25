@@ -175,15 +175,23 @@ public class CassandraCluster : IDisposable
         return list;
     }
 
+    // This will also find the node with the least requests to it's name
     private CassandraClient? FindAnyAliveNode()
     {
         CassandraClient? node = null;
+
+        int taskCount = int.MaxValue;
         foreach (CassandraClient possibleNode in this._nodes)
         {
             if (!possibleNode.IsDead)
             {
+                if (taskCount < possibleNode.TaskCount)
+                {
+                    continue;
+                }
+
                 node = possibleNode;
-                break;
+                taskCount = possibleNode.TaskCount;
             }
         }
 

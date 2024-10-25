@@ -81,7 +81,6 @@ public class ClientTests
             Is.EqualTo(IPAddress.Parse("d060:f059:03e8:3bbf:7f7f:d83f:d782:26ba"))
         );
 
-
         Assert.IsNotNull(warningQuery.Warnings);
         Assert.That(
             warningQuery.Warnings[0],
@@ -145,7 +144,6 @@ public class ClientTests
             .Build();
 
         Query query = await this._client.QueryAsync(statement);
-
         Row row = query[0];
 
         Assert.IsInstanceOf<Dictionary<string, string>>(row["houses"]);

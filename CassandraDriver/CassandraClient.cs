@@ -20,15 +20,15 @@ public class CassandraClient : IDisposable
     private readonly Socket _socket;
     private readonly int _port;
     private readonly CancellationTokenSource _tokenSource = new();
+    private readonly StreamIdTracker _tracker = new();
 
     private readonly ConcurrentDictionary<short, TaskCompletionSource<StreamData>>
         _streams = new();
 
-    /// <summary>
-    /// Tells if the node is dead. Used by <see cref="CassandraCluster"/> to ignore certain clients.
-    /// </summary>
     // ReSharper disable once FieldCanBeMadeReadOnly.Global
     internal bool IsDead = false;
+
+    internal int TaskCount => this._streams.Count;
 
     internal readonly string Host;
 
@@ -134,7 +134,7 @@ public class CassandraClient : IDisposable
             statement.ItemsPerPage
         );
 
-        short stream = (short)Random.Shared.Next(0, short.MaxValue);
+        short stream = this._tracker.AcquireStreamId();
         CqlFrame frame = new(stream, CqlOpCode.Query, cqlQuery.SizeOf());
 
         ArrayPoolBufferWriter<byte> writer = new(frame.SizeOf() + cqlQuery.SizeOf());
@@ -167,7 +167,7 @@ public class CassandraClient : IDisposable
     public async Task<Prepared> PrepareAsync(string query)
     {
         CqlLongString queryStr = new(query);
-        short stream = (short)new Random().Next(0, short.MaxValue);
+        short stream = this._tracker.AcquireStreamId();
         CqlFrame frame = new(stream, CqlOpCode.Prepare, queryStr.SizeOf());
 
         ArrayPoolBufferWriter<byte> writer = new();
@@ -221,7 +221,7 @@ public class CassandraClient : IDisposable
             statement.PagingState,
             statement.ItemsPerPage);
 
-        short stream = (short)new Random().Next(0, short.MaxValue);
+        short stream = this._tracker.AcquireStreamId();
         CqlFrame frame = new(
             stream,
             CqlOpCode.Execute,
@@ -288,6 +288,12 @@ public class CassandraClient : IDisposable
 
                 CqlFrame frame = CqlFrame.Deserialize(ackResponse);
 
+                if (frame.Stream < 0)
+                {
+                    continue;
+                }
+
+                this._tracker.ReleaseStreamId(frame.Stream);
                 if (this._streams.TryRemove(frame.Stream,
                         out TaskCompletionSource<StreamData>? completionSource))
                 {
